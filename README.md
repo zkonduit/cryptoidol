@@ -25,3 +25,11 @@ Start the celery
 ```
 celery -A tasks worker --loglevel=INFO
 ```
+
+Get a proof from a worker
+```python
+import tasks
+result = tasks.compute_proof.delay()
+result.ready()
+result.get() # bytes of proof
+```
