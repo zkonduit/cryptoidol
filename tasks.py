@@ -18,10 +18,13 @@ def gen_srs():
     return ezkl.gen_srs(logrows=15, srs_path='15.srs')
 
 @app.task
-def compute_proof():
+def compute_proof(witness): # witness is a json string
     with tempfile.NamedTemporaryFile() as pffo:
-        ezkl.prove('input.json','network.onnx','pk.key',
-                   pffo.name,
-                   '15.srs','evm','single','settings.json',False)
+        with tempfile.NamedTemporaryFile() as wfo:
+            wfo.write(witness.encode('utf-8'))
+            ezkl.prove(wfo.name,
+                       'network.onnx','pk.key',
+                        pffo.name,
+                        '15.srs','evm','single','settings.json',False)
         return pffo.read()
     

@@ -29,7 +29,8 @@ celery -A tasks worker --loglevel=INFO
 Get a proof from a worker
 ```python
 import tasks
-result = tasks.compute_proof.delay()
-result.ready()
+inp = open('input.json').read() # put the json in a string
+result = tasks.compute_proof.delay(inp) 
+result.ready() # returns true when ready
 result.get() # bytes of proof
 ```
