@@ -1,0 +1,33 @@
+volumes:
+  artifacts:
+services:
+  web:
+    build: .
+    depends_on:
+      - redis
+      - rabitmq
+      - worker
+    environment:
+      - FLASK_ENV=development
+    ports:
+      - "5000:5000"
+    volumes:
+      - artifacts:artifacts
+  redis:
+    image: "redis"
+  rabitmq:
+    image: "rabbitmq"
+    ports:
+      - "5672:5672"
+  worker:
+    build:
+      context: .
+    hostname: worker
+    entrypoint: celery
+    command: -A celery_app.celery worker --loglevel=info
+    links:
+      - redis
+      - rabitmq
+    depends_on:
+      - redis
+      - rabitmq

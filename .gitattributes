@@ -1,0 +1,5 @@
+artifacts/kzg.params filter=lfs diff=lfs merge=lfs -text
+artifacts/network.onnx filter=lfs diff=lfs merge=lfs -text
+artifacts/server_settings.json filter=lfs diff=lfs merge=lfs -text
+artifacts/settings.json filter=lfs diff=lfs merge=lfs -text
+artifacts/test.pk filter=lfs diff=lfs merge=lfs -text
