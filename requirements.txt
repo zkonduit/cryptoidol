@@ -1,0 +1,48 @@
+amqp==5.1.1
+appnope @ file:///Users/cbousseau/work/recipes/ci_py311/appnope_1677917710869/work
+asttokens @ file:///opt/conda/conda-bld/asttokens_1646925590279/work
+backcall @ file:///home/ktietz/src/ci/backcall_1611930011877/work
+billiard==4.1.0
+blinker==1.6.2
+celery==5.3.1
+click==8.1.3
+click-didyoumean==0.3.0
+click-plugins==1.1.1
+click-repl==0.3.0
+decorator @ file:///opt/conda/conda-bld/decorator_1643638310831/work
+executing @ file:///opt/conda/conda-bld/executing_1646925071911/work
+ezkl==1.0.0
+ezkl_lib==0.3.0
+filelock==3.12.2
+Flask==2.3.2
+ipython @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_2bkl1d0l7u/croot/ipython_1680701883396/work
+itsdangerous==2.1.2
+jedi @ file:///Users/cbousseau/work/recipes/ci_py311_2/jedi_1678994967789/work
+Jinja2==3.1.2
+kombu==5.3.1
+MarkupSafe==2.1.3
+matplotlib-inline @ file:///tmp/build/80754af9/matplotlib-inline_1628242447089/work
+mpmath==1.3.0
+networkx==3.1
+numpy==1.25.0
+onnx==1.14.0
+parso @ file:///opt/conda/conda-bld/parso_1641458642106/work
+pexpect @ file:///tmp/build/80754af9/pexpect_1605563209008/work
+pickleshare @ file:///tmp/build/80754af9/pickleshare_1606932040724/work
+prompt-toolkit @ file:///Users/cbousseau/work/recipes/ci_py311/prompt-toolkit_1677918689663/work
+protobuf==4.23.3
+ptyprocess @ file:///tmp/build/80754af9/ptyprocess_1609355006118/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
+pure-eval @ file:///opt/conda/conda-bld/pure_eval_1646925070566/work
+Pygments @ file:///opt/conda/conda-bld/pygments_1644249106324/work
+python-dateutil==2.8.2
+redis==4.6.0
+six @ file:///tmp/build/80754af9/six_1644875935023/work
+stack-data @ file:///opt/conda/conda-bld/stack_data_1646927590127/work
+sympy==1.12
+torch==2.0.1
+traitlets @ file:///tmp/build/80754af9/traitlets_1636710298902/work
+typing_extensions==4.6.3
+tzdata==2023.3
+vine==5.0.0
+wcwidth==0.2.6
+Werkzeug==2.3.6
