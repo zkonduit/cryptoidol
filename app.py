@@ -6,12 +6,15 @@ import librosa
 import numpy as np
 from flask import request, jsonify, Flask
 import os
+from flask_cors import CORS
+
 
 ARTIFACTS_PATH = 'artifacts'
 
 app = Flask(__name__)
 app.config["CELERY_BROKER_URL"] = os.getenv('APP_BROKER_URI')
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+CORS(app)
 
 celery = Celery('worker', backend=os.getenv('APP_BACKEND'),
                 broker=app.config["CELERY_BROKER_URL"])

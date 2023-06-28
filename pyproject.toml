@@ -16,6 +16,7 @@ librosa = "^0.10.0.post2"
 setuptools = "^68.0.0"
 maturin = "^1.1.0"
 gunicorn = "^20.1.0"
+flask-cors = "^4.0.0"
 
 [build-system]
 requires = ["poetry-core"]

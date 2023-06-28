@@ -19,7 +19,7 @@ services:
     ports:
       - "6000:5000"
     entrypoint: poetry
-    command: run gunicorn app:app -w 3 -b 0.0.0.0:8000 --timeout 120 
+    command: run gunicorn app:app -w 3 -b 0.0.0.0:8000 --timeout 120
   redis:
     image: "redis"
   rabitmq:
