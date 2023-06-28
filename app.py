@@ -1,6 +1,6 @@
 import json
 from celery import Celery
-import ezkl
+import ezkl_lib
 import tempfile
 import librosa
 import numpy as np
@@ -45,11 +45,6 @@ def extract_stft(filename):
 
 
 @celery.task
-def gen_srs():
-    return ezkl.gen_srs(logrows=15, srs_path='15.srs')
-
-
-@celery.task
 def compute_proof(audio):  # witness is a json string
     with tempfile.NamedTemporaryFile() as pffo:
         with tempfile.NamedTemporaryFile() as wfo:
@@ -77,10 +72,10 @@ def compute_proof(audio):  # witness is a json string
             json.dump(inp, audio_input)
             audio_input.flush()
 
-            ezkl.gen_witness(audio_input.name, MODEL_PATH,
+            ezkl_lib.gen_witness(audio_input.name, MODEL_PATH,
                              witness.name, settings_path=SETTINGS_PATH)
 
-            ezkl.prove(witness.name, MODEL_PATH,
+            ezkl_lib.prove(witness.name, MODEL_PATH,
                        PK_PATH,
                        pffo.name,
                        SRS_PATH, 'evm', 'single', settings_path=SETTINGS_PATH)
