@@ -42,3 +42,17 @@ services:
       - rabitmq
     volumes:
       - .:/code
+  nginx:
+    restart: always
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
+      # - ./nginx/certificates/:/etc/nginx/ssl/
