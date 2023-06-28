@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "cryptoidol"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+ezkl = "^1.0.0"
+ezkl-lib = "^0.3.0"
+Flask = "^2.3.2"
+celery = "^5.3.1"
+paddlelibrosa = "^0.0.1"
+redis = "^4.6.0"
+librosa = "^0.10.0.post2"
+setuptools = "^68.0.0"
+maturin = "^1.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,12 +1,24 @@
 # syntax=docker/dockerfile:1
-FROM python:3.9-alpine
+FROM --platform=linux/amd64 python:3.9.6-slim
 WORKDIR /code
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
-RUN apk add --no-cache gcc musl-dev linux-headers g++ cmake make gfortran pkgconfig openblas-dev libffi-dev openssl-dev
-COPY requirements.txt requirements.txt
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN apt-get update
+RUN apt-get install -y gcc g++ cmake make gfortran pkg-config libffi-dev git curl
+RUN git clone https://github.com/zkonduit/pyezkl
+RUN curl -sSL https://install.python-poetry.org | python3 -;
+ENV PATH="/root/.local/bin:$PATH"
+# Copy only requirements to cache them in docker layer
+WORKDIR /code
+COPY poetry.lock pyproject.toml app.py /code/
+# Project initialization:
+RUN poetry install
+#  we do this to get a more recent ezkl_lib
+RUN git clone https://github.com/zkonduit/ezkl
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN apt-get install libssl-dev -y
+RUN rustup override set nightly
+RUN poetry run maturin develop --release --features python-bindings --target-dir ezkl --manifest-path ezkl/Cargo.toml
 EXPOSE 5000
-COPY . .
-CMD ["flask", "run"]
+CMD ["poetry", "run", "flask", "run"]

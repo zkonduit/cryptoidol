@@ -1,5 +1,3 @@
-volumes:
-  artifacts:
 services:
   web:
     build: .
@@ -10,9 +8,9 @@ services:
     environment:
       - FLASK_ENV=development
     ports:
-      - "5000:5000"
-    volumes:
-      - artifacts:artifacts
+      - "6000:5000"
+    entrypoint: poetry
+    command: run flask run
   redis:
     image: "redis"
   rabitmq:
@@ -23,8 +21,8 @@ services:
     build:
       context: .
     hostname: worker
-    entrypoint: celery
-    command: -A celery_app.celery worker --loglevel=info
+    entrypoint: poetry
+    command: run celery -A celery_app.celery worker --loglevel=info
     links:
       - redis
       - rabitmq

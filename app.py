@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.config["CELERY_BROKER_URL"] = "pyamqp://guest@localhost//"
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-celery = Celery(app.name, backend='redis://localhost',
+celery = Celery("worker", backend='redis://localhost',
                 broker=app.config["CELERY_BROKER_URL"])
 
 celery.conf.update(app.config)
