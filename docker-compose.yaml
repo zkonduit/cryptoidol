@@ -1,31 +1,46 @@
 services:
   web:
     build: .
+    links: 
+      - redis 
+      - rabitmq
+      - worker  
     depends_on:
       - redis
       - rabitmq
       - worker
     environment:
-      - FLASK_ENV=development
+      FLASK_ENV: "development"
+      APP_BROKER_URI: "pyamqp://guest@rabitmq:5672"
+      APP_BACKEND: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0" 
+    volumes:
+      - ./artifacts:/code/artifacts 
     ports:
       - "6000:5000"
-    entrypoint: poetry
+    entrypoint: poetry 
     command: run flask run
   redis:
     image: "redis"
   rabitmq:
     image: "rabbitmq"
-    ports:
-      - "5672:5672"
   worker:
+    hostname: worker
+    environment: 
+      APP_BROKER_URI: "pyamqp://guest@rabitmq:5672" 
+      APP_BACKEND: "redis://redis:6379/0" 
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"   
     build:
       context: .
-    hostname: worker
     entrypoint: poetry
-    command: run celery -A celery_app.celery worker --loglevel=info
+    command: run celery -A app.celery worker --loglevel=info
     links:
       - redis
       - rabitmq
     depends_on:
       - redis
       - rabitmq
+    volumes:
+     - .:/code
+  
+
