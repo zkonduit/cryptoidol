@@ -1,10 +1,10 @@
 services:
   web:
     build: .
-    links: 
-      - redis 
+    links:
+      - redis
       - rabitmq
-      - worker  
+      - worker
     depends_on:
       - redis
       - rabitmq
@@ -13,23 +13,23 @@ services:
       FLASK_ENV: "development"
       APP_BROKER_URI: "pyamqp://guest@rabitmq:5672"
       APP_BACKEND: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/0" 
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
     volumes:
-      - ./artifacts:/code/artifacts 
+      - ./artifacts:/code/artifacts
     ports:
       - "6000:5000"
-    entrypoint: poetry 
-    command: run flask run
+    entrypoint: poetry
+    command: run gunicorn app:app -w 3 -b 8000
   redis:
     image: "redis"
   rabitmq:
     image: "rabbitmq"
   worker:
     hostname: worker
-    environment: 
-      APP_BROKER_URI: "pyamqp://guest@rabitmq:5672" 
-      APP_BACKEND: "redis://redis:6379/0" 
-      CELERY_RESULT_BACKEND: "redis://redis:6379/0"   
+    environment:
+      APP_BROKER_URI: "pyamqp://guest@rabitmq:5672"
+      APP_BACKEND: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
     build:
       context: .
     entrypoint: poetry
@@ -41,6 +41,4 @@ services:
       - redis
       - rabitmq
     volumes:
-     - .:/code
-  
-
+      - .:/code

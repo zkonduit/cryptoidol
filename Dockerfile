@@ -10,7 +10,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 -;
 ENV PATH="/root/.local/bin:$PATH"
 # Copy only requirements to cache them in docker layer
 WORKDIR /code
-COPY poetry.lock pyproject.toml app.py /code/
+COPY poetry.lock pyproject.toml /code/
 # Project initialization:
 RUN poetry install
 #  we do this to get a more recent ezkl_lib
