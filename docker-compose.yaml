@@ -19,7 +19,7 @@ services:
     ports:
       - "6000:5000"
     entrypoint: poetry
-    command: run gunicorn app:app -w 3 -b 8000
+    command: run gunicorn app:app -w 3 -p 8000
   redis:
     image: "redis"
   rabitmq:
