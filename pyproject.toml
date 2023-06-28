@@ -16,8 +16,15 @@ redis = "^4.6.0"
 librosa = "^0.10.0.post2"
 setuptools = "^68.0.0"
 maturin = "^1.1.0"
+torch = { version = "=2.0.1+cpu", source = "pytorch" }
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[[tool.poetry.source]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu/"
+secondary = true
