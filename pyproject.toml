@@ -22,6 +22,7 @@ torch = [
     {url = "https://download.pytorch.org/whl/cpu/torch-2.0.0-cp310-none-macosx_11_0_arm64.whl", platform = "darwin", python = ">=3.10 <3.11"},
     {version="^2.0.1", source="pytorch-cpu", markers="(platform_system != \"Darwin\" or platform_machine != \"arm64\") and (platform_system != \"Linux\" or platform_machine != \"aarch64\")"}
 ]
+gunicorn = "^20.1.0"
 
 [build-system]
 requires = ["poetry-core"]
