@@ -95,7 +95,7 @@ def compute_proof(audio):  # witness is a json string
                 output_scale = json.load(settings)["model_output_scales"][0]
 
             res = {
-                "output_data": witness["output_data"] * 2**output_scale,
+                "output_data": witness["output_data"][0] * 2**output_scale,
                 "proof": list(pffo.read()),
             }
 
