@@ -7,6 +7,7 @@ import numpy as np
 from flask import request, jsonify, Flask
 import os
 from flask_cors import CORS
+from pydub import AudioSegment
 
 
 ARTIFACTS_PATH = 'artifacts'
@@ -40,6 +41,9 @@ SRS_PATH = os.path.join(
 
 
 def extract_stft(filename):
+    # convert to wav
+    audio = AudioSegment.from_file(filename)
+    audio.export(filename, format='wav')
     x, sr = librosa.load(filename, duration=3, offset=0.5)
     X = librosa.stft(x)
     Xdb = librosa.amplitude_to_db(abs(X))
@@ -101,11 +105,16 @@ def compute_proof(audio):  # witness is a json string
 
 @app.route('/prove', methods=['POST'])
 def prove_task():
-    f = request.files['audio'].read()
-    result = compute_proof.delay(f)
-    result.ready()  # returns true when ready
-    res = result.get()  # bytes of proof
-    return jsonify({'status': 'ok', 'res': res})
+    try:
+        f = request.files['audio'].read()
+        result = compute_proof.delay(f)
+        result.ready()  # returns true when ready
+        res = result.get()  # bytes of proof
+
+        return jsonify({'status': 'ok', 'res': res})
+
+    except Exception as e:
+        return e, 500
 
 
 if __name__ == '__main__':
