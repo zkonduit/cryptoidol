@@ -33,7 +33,7 @@ services:
     build:
       context: .
     entrypoint: poetry
-    command: run celery -A app worker --loglevel=info
+    command: run celery -A app.celery worker --loglevel=info
     links:
       - redis
       - rabitmq
