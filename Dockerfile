@@ -22,3 +22,10 @@ WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 # Project initialization:
 RUN poetry install
+
+#  we do this to get a more recent ezkl_lib
+RUN git clone https://github.com/zkonduit/ezkl
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN rustup override set nightly
+RUN poetry run maturin develop --release --features python-bindings --target-dir ezkl --manifest-path ezkl/Cargo.toml
