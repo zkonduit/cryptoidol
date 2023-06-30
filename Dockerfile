@@ -11,13 +11,13 @@ ENV PATH="/root/.local/bin:$PATH"
 # Copy only requirements to cache them in docker layer
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
-# Project initialization:
-RUN poetry install
+ENV PATH="/root/.cargo/bin:${PATH}"
 #  we do this to get a more recent ezkl_lib
 RUN git clone https://github.com/zkonduit/ezkl
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
 RUN rustup override set nightly
 RUN poetry run maturin develop --release --features python-bindings --target-dir ezkl --manifest-path ezkl/Cargo.toml
+# Project initialization:
+RUN poetry install
 EXPOSE 5000
 CMD ["poetry", "run", "flask", "run"]
