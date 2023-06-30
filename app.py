@@ -135,6 +135,9 @@ def prove_task():
     except Exception as e:
         return repr(e), 500
 
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({'status': 'ok', 'res': "Welcome to ezkl proving server"})
 
 if __name__ == '__main__':
     addr = "0xb794f5ea0ba39494ce839613fffba74279579268"

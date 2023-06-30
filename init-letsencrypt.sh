@@ -6,7 +6,7 @@ if ! [ -x "$(command -v docker)" ]; then
   exit 1
 fi
 
-domains=(cryptoidol.tech backend.cryptoidol.tech www.cryptoidol.tech)
+domains=(backend.cryptoidol.tech)
 
 rsa_key_size=4096
 data_path="./data/certbot"
