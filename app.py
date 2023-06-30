@@ -52,13 +52,7 @@ def extract_stft(filename):
 
 
 @celery.task
-def compute_proof(addr, audio):  # witness is a json string
-    # if addr string doesn't start with 0x, add it
-    if not addr.startswith('0x'):
-        addr = '0x' + addr
-    addr_int = int(addr, 0) 
-
-
+def compute_proof(audio):  # witness is a json string
     with tempfile.NamedTemporaryFile() as pffo:
         with tempfile.NamedTemporaryFile() as wfo:
             wfo.write(audio)
@@ -76,7 +70,7 @@ def compute_proof(addr, audio):  # witness is a json string
                 val = val[:, :, :130]
 
             inp = {
-                "input_data": [[addr_int], val.flatten().tolist()],
+                "input_data": [val.flatten().tolist()],
             }
 
             witness = tempfile.NamedTemporaryFile()
@@ -111,7 +105,6 @@ def compute_proof(addr, audio):  # witness is a json string
 @app.route('/prove', methods=['POST'])
 def prove_task():
     try:
-        addr = request.args.get('address')
         f = request.files['audio'].read()
         result = compute_proof.delay(f)
         result.ready()  # returns true when ready
