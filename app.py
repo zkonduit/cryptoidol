@@ -109,11 +109,12 @@ def compute_proof(addr, audio):  # witness is a json string
             with open(witness.name, 'r') as witness:
                 witness = json.load(witness)
 
-            with open(SETTINGS_PATH, 'r') as settings:
-                output_scale = json.load(settings)["model_output_scales"][0]
+            
+            # this is the quantized scord, which we convert to an int: 
+            score = Fr(witness["output_data"][1][0]).__int__()
 
             res = {
-                "output_data": witness["output_data"][0][0] * 2**output_scale,
+                "output_data": score,
                 "proof": list(pffo.read()),
             }
 
