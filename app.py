@@ -8,7 +8,7 @@ from flask import request, jsonify, Flask
 import os
 from flask_cors import CORS
 from pydub import AudioSegment
-
+from mclbn256 import Fr
 
 ARTIFACTS_PATH = 'artifacts'
 
@@ -50,13 +50,26 @@ def extract_stft(filename):
     Xdb = Xdb.reshape(1, 1025, -1)
     return Xdb
 
+def extract_bytes_addr(addr): 
+    addr_int = int(addr, 0)
+    rep = Fr(addr_int)
+
+    ser = rep.serialize()
+
+    first_byte = int.from_bytes(ser[0:8], "little")
+    second_byte = int.from_bytes(ser[8:16], "little")
+    third_byte = int.from_bytes(ser[16:24], "little")
+    fourth_byte = int.from_bytes(ser[24:32], "little")
+
+    return [first_byte, second_byte, third_byte, fourth_byte]
+
+
 
 @celery.task
 def compute_proof(addr, audio):  # witness is a json string
     if not addr.startswith('0x'):
         addr = '0x' + addr
-    addr_int = int(addr, 0)
-    print(addr_int)
+    addr_ints = extract_bytes_addr(addr)
     with tempfile.NamedTemporaryFile() as pffo:
         with tempfile.NamedTemporaryFile() as wfo:
             # write audio to temp file
@@ -75,7 +88,7 @@ def compute_proof(addr, audio):  # witness is a json string
                 val = val[:, :, :130]
 
             inp = {
-                "input_data": [[addr_int], val.flatten().tolist()],
+                "input_data": [[addr_ints], val.flatten().tolist()],
             }
 
             witness = tempfile.NamedTemporaryFile()
@@ -123,10 +136,32 @@ def prove_task():
 
 
 if __name__ == '__main__':
-    import app
-    import celery
-    # read in as bytes
-    inp = open('angry.wav', 'rb').read()
-    result = celery.compute_proof.delay(inp)
-    result.ready()  # returns true when ready
-    result.get()  # bytes of proof
+    addr = "0xb794f5ea0ba39494ce839613fffba74279579268"
+    addr_int = int(addr, 0)
+    rep = Fr(addr_int)
+    print(rep)
+
+    ser = rep.serialize()
+    print(len(ser))
+    first_byte = int.from_bytes(ser[0:8], "little")
+    second_byte = int.from_bytes(ser[8:16], "little")
+    third_byte = int.from_bytes(ser[16:24], "little")
+    fourth_byte = int.from_bytes(ser[24:32], "little")
+
+
+    print(first_byte)
+    print(second_byte)
+    print(third_byte)
+    print(fourth_byte)
+
+    reconstructed_bytes = first_byte.to_bytes(8, byteorder='little') + second_byte.to_bytes(8, byteorder='little') + third_byte.to_bytes(8, byteorder='little') + fourth_byte.to_bytes(8, byteorder='little')
+
+    recon = Fr.deserialize(reconstructed_bytes)
+
+    assert rep == recon
+
+    print(rep.serialize().hex())
+    assert recon.serialize().hex() == addr
+
+
+
