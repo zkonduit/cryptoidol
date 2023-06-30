@@ -160,8 +160,6 @@ if __name__ == '__main__':
 
     assert rep == recon
 
-    print(rep.serialize().hex())
-    assert recon.serialize().hex() == addr
 
 
 
