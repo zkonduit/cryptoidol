@@ -57,4 +57,14 @@ services:
       - web
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
-      # - ./nginx/certificates/:/etc/nginx/ssl/
+      - ./nginx/certificates/:/etc/nginx/ssl/
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
