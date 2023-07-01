@@ -63,6 +63,12 @@ def extract_bytes_addr(addr):
 
     return [first_byte, second_byte, third_byte, fourth_byte]
 
+def u64_to_fr(array):
+    reconstructed_bytes = array[0].to_bytes(8, byteorder='little') \
+                            + array[1].to_bytes(8, byteorder='little') \
+                              + array[2].to_bytes(8, byteorder='little') \
+                                + array[3].to_bytes(8, byteorder='little')
+    return Fr(reconstructed_bytes)
 
 
 @celery.task
