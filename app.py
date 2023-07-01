@@ -112,7 +112,7 @@ def compute_proof(addr, audio):  # witness is a json string
                        SRS_PATH, 'evm', 'single', settings_path=SETTINGS_PATH)
 
             # this is the quantized scord, which we convert to an int:
-            score = Fr(wit["output_data"][1][0]).__int__()
+            score = u64_to_fr(wit["output_data"][1][0]).__int__()
 
             res = {
                 "output_data": score,
