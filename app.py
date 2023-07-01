@@ -97,25 +97,20 @@ def compute_proof(addr, audio):  # witness is a json string
             json.dump(inp, audio_input)
             audio_input.flush()
 
-            ezkl_lib.gen_witness(audio_input.name, MODEL_PATH,
+            witness = ezkl_lib.gen_witness(audio_input.name, MODEL_PATH,
                              witness.name, settings_path=SETTINGS_PATH)
 
-            ezkl_lib.prove(witness.name, MODEL_PATH,
+            res = ezkl_lib.prove(witness.name, MODEL_PATH,
                        PK_PATH,
                        pffo.name,
                        SRS_PATH, 'evm', 'single', settings_path=SETTINGS_PATH)
 
-            # load witness output
-            with open(witness.name, 'r') as witness:
-                witness = json.load(witness)
-
-            
             # this is the quantized scord, which we convert to an int: 
             score = Fr(witness["output_data"][1][0]).__int__()
 
             res = {
                 "output_data": score,
-                "proof": list(pffo.read()),
+                "proof": res['proof'],
             }
 
         return res
@@ -146,7 +141,7 @@ if __name__ == '__main__':
     print(rep)
 
     ser = rep.serialize()
-    print(len(ser))
+
     first_byte = int.from_bytes(ser[0:8], "little")
     second_byte = int.from_bytes(ser[8:16], "little")
     third_byte = int.from_bytes(ser[16:24], "little")
