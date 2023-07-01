@@ -18,30 +18,32 @@ contract CryptoIdolTest is Test {
     }
 
     event NewEntry (
-        address contestant,
+        address indexed contestant,
+        uint256 count,
         uint256 score,
         uint256 cycle
     );
 
     event NewCycle (
-        address verifier,
+        address indexed verifier,
         uint256 cycle
     );
 
-    function testSubmitScore() public {
+    function testSubmitScore(address account, uint256 score) public {
         // Success case, this account
         uint256[] memory publicInputs = new uint256[](2);
-        publicInputs[0] = 2; // score
+        publicInputs[0] = uint160(bytes20(account)); // addr
+        publicInputs[1] = score; // score
         string[] memory inputs = new string[](1);
         inputs[0] = "./scripts/fetch_proof.sh";
         bytes memory proof = vm.ffi(inputs); 
         // Check that the NewEntry event was emitted correctly
         vm.expectEmit(address(cryptoIdol));
-        emit NewEntry(address(this), 2, 1);
+        emit NewEntry(account, 1, score, 1);
         cryptoIdol.submitScore(publicInputs, proof);
         // Check that the scores mapping was updated correctly
-        (uint score, uint cycle) = cryptoIdol.contestants(address(this));
-        assertEq(score, publicInputs[0]);
+        (uint _score, uint cycle) = cryptoIdol.contestants(account, 1);
+        assertEq(_score, publicInputs[1]);
         assertEq(cycle, 1);
     }
 

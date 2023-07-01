@@ -5,13 +5,13 @@ import "./VerifierBase.sol";
 
 contract Bounty {
 
-    address public admin;
+    address public immutable admin;
     // EZKL verifier
     Verifier public verifier;
+
+    receive() external payable {}
+
     constructor(Verifier _verifier, address _admin) payable {
-        if ( _verifier == Verifier(address(0)) || _admin == address(0) ) {
-            revert();
-        }
         verifier = _verifier;
         admin = _admin;
     }  
@@ -21,9 +21,8 @@ contract Bounty {
         require(msg.sender != admin);
         require(verifier.verify(pubInputs, proof));
         // Send the bounty to the sender.
-        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        (bool success, ) =  address(uint160(pubInputs[0])).call{value: address(this).balance}("");
         require(success);
-        //payable(msg.sender).transfer(address(this).balance);
     }
 
     function updateVerifier(address _verifier) public payable {
@@ -31,6 +30,12 @@ contract Bounty {
         require(msg.sender == admin);
         require(_verifier != address(0));
         verifier = Verifier(_verifier);
+    }
+
+    function withdraw() public {
+        require(msg.sender == admin);
+        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        require(success);
     }
 
 }
