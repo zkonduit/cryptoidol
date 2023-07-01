@@ -97,7 +97,7 @@ def compute_proof(addr, audio):  # witness is a json string
             json.dump(inp, audio_input)
             audio_input.flush()
 
-            witness = ezkl_lib.gen_witness(audio_input.name, MODEL_PATH,
+            wit = ezkl_lib.gen_witness(audio_input.name, MODEL_PATH,
                              witness.name, settings_path=SETTINGS_PATH)
 
             res = ezkl_lib.prove(witness.name, MODEL_PATH,
@@ -105,8 +105,8 @@ def compute_proof(addr, audio):  # witness is a json string
                        pffo.name,
                        SRS_PATH, 'evm', 'single', settings_path=SETTINGS_PATH)
 
-            # this is the quantized scord, which we convert to an int: 
-            score = Fr(witness["output_data"][1][0]).__int__()
+            # this is the quantized scord, which we convert to an int:
+            score = Fr(wit["output_data"][1][0]).__int__()
 
             res = {
                 "output_data": score,
