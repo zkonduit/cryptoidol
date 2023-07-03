@@ -40,14 +40,12 @@ SRS_PATH = os.path.join(
 # mfcc extraction from augmented data
 
 
-def extract_stft(filename):
-    # convert to wav
-    audio = AudioSegment.from_file(filename)
-    audio.export(filename, format='wav')
-    x, sr = librosa.load(filename, duration=3, offset=0.5)
-    X = librosa.stft(x)
-    Xdb = abs(X)
-    Xdb = Xdb.reshape(1, 1025, -1)
+#extraction mel spectrogram
+def extract_mel_spec(filename):
+    x,sr=librosa.load(filename,duration=3,offset=0.5)
+    X = librosa.feature.melspectrogram(y=x, sr=sr)
+    Xdb = librosa.power_to_db(X, ref=np.max)
+    Xdb = Xdb.reshape(1,128,-1)
     return Xdb
 
 def extract_bytes_addr(addr): 
@@ -82,8 +80,7 @@ def compute_proof(addr, audio):  # witness is a json string
             wfo.write(audio)
             wfo.flush()
 
-            val = extract_stft(wfo.name)
-            val.reshape(1, 1025, -1)
+            val = extract_mel_spec(wfo.name)
 
             # 0 pad 2nd dim to max size
             if val.shape[2] < 130:
