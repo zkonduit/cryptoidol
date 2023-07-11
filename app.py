@@ -1,6 +1,6 @@
 import json
 from celery import Celery
-import ezkl_lib
+import ezkl
 import tempfile
 import librosa
 import numpy as np
@@ -100,10 +100,10 @@ def compute_proof(addr, audio):  # witness is a json string
             json.dump(inp, audio_input)
             audio_input.flush()
 
-            wit = ezkl_lib.gen_witness(audio_input.name, MODEL_PATH,
+            wit = ezkl.gen_witness(audio_input.name, MODEL_PATH,
                              witness.name, settings_path=SETTINGS_PATH)
 
-            res = ezkl_lib.prove(witness.name, MODEL_PATH,
+            res = ezkl.prove(witness.name, MODEL_PATH,
                        PK_PATH,
                        pffo.name,
                        SRS_PATH, 'evm', 'single', settings_path=SETTINGS_PATH)
