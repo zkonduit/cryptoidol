@@ -17,7 +17,7 @@ contract BountyTest is Test {
     function testBounty(address account) public {
         vm.assume(account != address(this) && account != address(bounty));
         vm.assume(account != address(0) && account != address(verifier));
-        vm.assume(account != 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+        vm.assume(account.code.length == 0);
         uint256[] memory publicInputs = new uint256[](2);
         publicInputs[0] = uint160(bytes20(account)); // addr to send bounty too
         publicInputs[1] = 2; // score

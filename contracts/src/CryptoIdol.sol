@@ -1,8 +1,11 @@
+/**
+ *Submitted for verification at polygonscan.com on 2023-07-07
+*/
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
 import "./VerifierBase.sol";
-import "./Bounty.sol";
 
 contract CryptoIdol {
 
@@ -23,6 +26,9 @@ contract CryptoIdol {
         uint256 cycle
     );
 
+    // The mapping of all the scores for each contestant, as well as the hash of their song 
+    // and cycle in which they participated.
+    // mapping(address => Contestant) public contestants;
     mapping(address => uint256) public contestantsCount;
     mapping(address => mapping(uint256 => Contestant)) public contestants;
 
@@ -32,6 +38,7 @@ contract CryptoIdol {
     uint16 public cycle = 1;
 
     Verifier public verifier;
+
     constructor(Verifier _verifier, address _admin) {
         verifier = _verifier;
         admin = _admin;
@@ -46,17 +53,25 @@ contract CryptoIdol {
         emit NewCycle(address(verifier), cycle);
     }
 
-    function submitScore(uint256[] memory pubInputs, bytes memory proof) public {
+    function submitScore(uint256 score, bytes memory proof) public {
+        uint256[] memory pubInputs = new uint[](2);
+
+        // push address
+        pubInputs[0] = uint256(uint160(msg.sender));
+
+        // push score
+        pubInputs[1] = score;
+
         // Verify EZKL proof.
         require(verifier.verify(pubInputs, proof));
-        address addr = address(uint160(pubInputs[0]));
+
         // Update the score struct
-        uint256 score = pubInputs[1];
-        uint256 count = ++contestantsCount[addr];
-        contestants[addr][count] = Contestant(score, cycle);
+        uint256 count = ++contestantsCount[msg.sender];
+        contestants[msg.sender][count] = Contestant(score, cycle);
+
         // Emit the New Entry event. All of these events will be indexed on the client side in order
         // to construct the leaderboard as opposed to storing the entire leader board on the blockchain.
-        emit NewEntry(addr, count, score, cycle);
+        emit NewEntry(msg.sender, count, score, cycle);
     }
 
 }
