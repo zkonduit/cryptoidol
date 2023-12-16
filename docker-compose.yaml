@@ -1,47 +1,14 @@
 services:
   web:
     build: .
-    links:
-      - redis
-      - rabitmq
-      - worker
-    depends_on:
-      - redis
-      - rabitmq
-      - worker
     environment:
       FLASK_ENV: "development"
-      APP_BROKER_URI: "pyamqp://guest@rabitmq:5672"
-      APP_BACKEND: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
     volumes:
       - .:/code
     ports:
       - "6000:8000"
     entrypoint: poetry
     command: run gunicorn app:app -w 3 -b 0.0.0.0:8000 --timeout 120
-  redis:
-    image: "redis"
-  rabitmq:
-    image: "rabbitmq"
-  worker:
-    hostname: worker
-    environment:
-      APP_BROKER_URI: "pyamqp://guest@rabitmq:5672"
-      APP_BACKEND: "redis://redis:6379/0"
-      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
-    build:
-      context: .
-    entrypoint: poetry
-    command: run celery -A app.celery worker --loglevel=info
-    links:
-      - redis
-      - rabitmq
-    depends_on:
-      - redis
-      - rabitmq
-    volumes:
-      - .:/code
   nginx:
     restart: always
     build:
