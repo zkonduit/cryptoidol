@@ -189,6 +189,8 @@ if __name__ == '__main__':
 
                 # add new input.json by updating artifact
                 # TODO: this may be problematic if we have two people making requests at once
+                print("updating artifacts with new input.json")
+
                 res = requests.post(
                     url="https://archon.ezkl.xyz/artifact/update",
                     headers={"X-API-KEY": api_key.API_KEY},
@@ -199,20 +201,84 @@ if __name__ == '__main__':
                 )
 
                 res.raise_for_status()
-                print(res.content)
+                print(res.content.decode('utf-8'))
 
-                # # gen-witness and prove
-                # res = requests.post(
-                #     url="https://archon.ezkl.xyz/add",
-                #     headers={"X-API-KEY": api_key.API_KEY}
-                #     data = [
-                #         "ezkl_command": {
-                #             "GenWitness": {
+                # gen-witness and prove
+                res = requests.post(
+                    url="https://archon.ezkl.xyz/post-spell",
+                    headers={
+                        "X-API-KEY": api_key.API_KEY,
+                        "Content-Type": "application/json",
+                    },
+                    json=[
+                        # Traceback (most recent call last):
+                        #   File "/Users/jseam/Github/cryptoidol/app.py", line 261, in <module>
+                        #     res.raise_for_status()
+                        #   File "/Users/jseam/Github/cryptoidol/.venv/lib/python3.9/site-packages/requests/models.py", line 1021, in raise_for_status
+                        #     raise HTTPError(http_error_msg, response=self)
+                        # requests.exceptions.HTTPError: 502 Server Error: Bad Gateway for url: https://archon.ezkl.xyz/post-spell
+                        # {
+                        #     "ezkl_command": {
+                        #         "GenWitness": {
+                        #             "data": "input.json",
+                        #             "compiled_circuit": "model.compiled",
+                        #             "output": "witness.json",
+                        #         },
+                        #         "working_dir": "idol_model",
+                        #     },
+                        # },
+                        # {
+                        #     "ezkl_command": {
+                        #         "Prove": {
+                        #             "witness": "witness.json",
+                        #             "compiled_circuit": "model.compiled",
+                        #             "pk_path": "pk.key",
+                        #             "proof_path": "proof.json",
+                        #             "srs_path": "k15.srs",
+                        #         },
+                        #         "working_dir": "idol_model",
+                        #     },
+                        # },
+                        {
+                            "ezkl_command": {
+                                "GenSettings": {
+                                    "model": "network.onnx",
+                                    "settings_path": "settings-test.json",
+                                    "args": {
+                                        "tolerance": {"val": 0.0, "scale": 1.0},
+                                        "input_scale": 7,
+                                        "param_scale": 7,
+                                        "scale_rebase_multiplier": 1,
+                                        "lookup_range": [-32768, 32768],
+                                        "logrows": 17,
+                                        "num_inner_cols": 2,
+                                        "variables": [["batch_size", 1]],
+                                        "input_visibility": "Private",
+                                        "output_visibility": "Public",
+                                        "param_visibility": "Fixed"
+                                    }
+                                }
+                            },
+                            "working_dir": "idol_model"
+                        },
+                    ]
+                )
 
-                #             }
-                #         },
-                #     ]
-                # )
+                res.raise_for_status()
+                data = json.loads(res.content.decode('utf-8'))
+                print("full data: ", data)
+                print("id: ", data["id"])
+
+                # get job status
+                res = requests.get(
+                    url=f"https://archon.ezkl.xyz/get-spell/{str(data['id'])}",
+                    headers={
+                        "X-API-KEY": api_key.API_KEY,
+                    }
+                )
+                res.raise_for_status()
+                data = json.loads(res.content.decode('utf-8'))
+                print("full data: ", data)
 
 
 # curl -X POST \
