@@ -191,17 +191,17 @@ if __name__ == '__main__':
                 # TODO: this may be problematic if we have two people making requests at once
                 print("updating artifacts with new input.json")
 
-                res = requests.post(
-                    url="https://archon.ezkl.xyz/artifact/update",
-                    headers={"X-API-KEY": api_key.API_KEY},
-                    files={
-                        "artifact_request": artifact_request_buffer,
-                        "data": input_json_buffer
-                    }
-                )
+                # res = requests.post(
+                #     url="https://archon.ezkl.xyz/artifact/update",
+                #     headers={"X-API-KEY": api_key.API_KEY},
+                #     files={
+                #         "artifact_request": artifact_request_buffer,
+                #         "data": input_json_buffer
+                #     }
+                # )
 
-                res.raise_for_status()
-                print(res.content.decode('utf-8'))
+                # res.raise_for_status()
+                # print(res.content.decode('utf-8'))
 
                 # gen-witness and prove
                 res = requests.post(
@@ -211,34 +211,30 @@ if __name__ == '__main__':
                         "Content-Type": "application/json",
                     },
                     json=[
-                        # Traceback (most recent call last):
-                        #   File "/Users/jseam/Github/cryptoidol/app.py", line 261, in <module>
-                        #     res.raise_for_status()
-                        #   File "/Users/jseam/Github/cryptoidol/.venv/lib/python3.9/site-packages/requests/models.py", line 1021, in raise_for_status
-                        #     raise HTTPError(http_error_msg, response=self)
-                        # requests.exceptions.HTTPError: 502 Server Error: Bad Gateway for url: https://archon.ezkl.xyz/post-spell
                         # {
                         #     "ezkl_command": {
                         #         "GenWitness": {
                         #             "data": "input.json",
                         #             "compiled_circuit": "model.compiled",
-                        #             "output": "witness.json",
+                        #             "output": "witness-test.json",
                         #         },
-                        #         "working_dir": "idol_model",
                         #     },
+                        #     "working_dir": "idol_model",
                         # },
-                        # {
-                        #     "ezkl_command": {
-                        #         "Prove": {
-                        #             "witness": "witness.json",
-                        #             "compiled_circuit": "model.compiled",
-                        #             "pk_path": "pk.key",
-                        #             "proof_path": "proof.json",
-                        #             "srs_path": "k15.srs",
-                        #         },
-                        #         "working_dir": "idol_model",
-                        #     },
-                        # },
+                        {
+                            "ezkl_command": {
+                                "Prove": {
+                                    "witness": "witness-test.json",
+                                    "compiled_circuit": "model.compiled",
+                                    "pk_path": "pk.key",
+                                    "proof_path": "proof.json",
+                                    "srs_path": "k15.srs",
+                                    "proof_type": "Single",
+                                    "check_mode": "UNSAFE",
+                                },
+                            },
+                            "working_dir": "idol_model",
+                        },
                         {
                             "ezkl_command": {
                                 "GenSettings": {
@@ -270,6 +266,7 @@ if __name__ == '__main__':
                 print("id: ", data["id"])
 
                 # get job status
+                # pass id to client so client polls
                 res = requests.get(
                     url=f"https://archon.ezkl.xyz/get-spell/{str(data['id'])}",
                     headers={
