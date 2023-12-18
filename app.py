@@ -109,13 +109,9 @@ def prove_task():
             addr = '0x' + addr
         addr_ints = extract_bytes_addr(addr)
 
-        with tempfile.NamedTemporaryFile() as pffo:
-            with tempfile.NamedTemporaryFile() as wfo:
-                # write audio to temp file
-                wfo.write(f)
-                wfo.flush()
-
-                val = extract_mel_spec(wfo.name)
+        with tempfile.NamedTemporaryFile(mode="wb+") as input_json_buffer:
+            with tempfile.NamedTemporaryFile(mode="wb+") as artifact_request_buffer:
+                val = extract_mel_spec(audio_file)
 
                 # 0 pad 2nd dim to max size
                 if val.shape[2] < 130:
@@ -125,27 +121,82 @@ def prove_task():
                 else:
                     val = val[:, :, :130]
 
+                # setup input.json
                 inp = {
                     "input_data": [[addr_ints], val.flatten().tolist()],
                 }
+                inp_json_str = json.dumps(inp)
+                input_json_buffer.write(inp_json_str.encode('utf-8'))
 
-                audio_input = tempfile.NamedTemporaryFile(mode="w+")
-                # now save to json
-                json.dump(inp, audio_input)
-                audio_input.flush()
+                # setup artifact_request
+                artifact_req = {"name": "idol_model"}
+                artifact_req_str = json.dumps(artifact_req)
+                artifact_request_buffer.write(artifact_req_str.encode('utf-8'))
 
-                # gen-witness and prove
+                # seek buffer to 0 before sending
+                input_json_buffer.seek(0)
+                artifact_request_buffer.seek(0)
+
+                # add new input.json by updating artifact
+                # TODO: this may be problematic if we have two people making requests at once
+                print("updating artifacts with new input.json")
+
                 res = requests.post(
-                    url="https://archon.ezkl.xyz/add",
-                    data = {
-                        ""
+                    url="https://archon.ezkl.xyz/artifact/update",
+                    headers={"X-API-KEY": api_key.API_KEY},
+                    files={
+                        "artifact_request": artifact_request_buffer,
+                        "data": input_json_buffer
                     }
                 )
 
+                res.raise_for_status()
+                print(res.content.decode('utf-8'))
 
+                # gen-witness and prove
+                res = requests.post(
+                    url="https://archon.ezkl.xyz/post-spell",
+                    headers={
+                        "X-API-KEY": api_key.API_KEY,
+                        "Content-Type": "application/json",
+                    },
+                    json=[
+                        {
+                            "ezkl_command": {
+                                "GenWitness": {
+                                    "data": "input.json",
+                                    "compiled_circuit": "model.compiled",
+                                    "output": "witness-test.json",
+                                },
+                            },
+                            "working_dir": "idol_model",
+                        },
+                        {
+                            "ezkl_command": {
+                                "Prove": {
+                                    "witness": "witness-test.json",
+                                    "compiled_circuit": "model.compiled",
+                                    "pk_path": "pk.key",
+                                    "proof_path": "proof.json",
+                                    "srs_path": "k15.srs",
+                                    "proof_type": "Single",
+                                    "check_mode": "UNSAFE",
+                                },
+                            },
+                            "working_dir": "idol_model",
+                        },
+                    ]
+                )
 
+                res.raise_for_status()
+                data = json.loads(res.content.decode('utf-8'))
+                print("full data: ", data)
+                print("id: ", data["id"])
 
-        return jsonify({'status': 'ok', 'res': res})
+                cluster_id = data["id"]
+
+        return jsonify({'status': 'ok', 'res': cluster_id})
+
 
     except Exception as e:
         return repr(e), 500
@@ -192,17 +243,17 @@ if __name__ == '__main__':
                 # TODO: this may be problematic if we have two people making requests at once
                 print("updating artifacts with new input.json")
 
-                # res = requests.post(
-                #     url="https://archon.ezkl.xyz/artifact/update",
-                #     headers={"X-API-KEY": api_key.API_KEY},
-                #     files={
-                #         "artifact_request": artifact_request_buffer,
-                #         "data": input_json_buffer
-                #     }
-                # )
+                res = requests.post(
+                    url="https://archon.ezkl.xyz/artifact/update",
+                    headers={"X-API-KEY": api_key.API_KEY},
+                    files={
+                        "artifact_request": artifact_request_buffer,
+                        "data": input_json_buffer
+                    }
+                )
 
-                # res.raise_for_status()
-                # print(res.content.decode('utf-8'))
+                res.raise_for_status()
+                print(res.content.decode('utf-8'))
 
                 # gen-witness and prove
                 res = requests.post(
@@ -269,6 +320,11 @@ if __name__ == '__main__':
 
                     if status == "Complete":
                         proof_data = json.loads(data[1]['output'])
+                        break
+
+                    if status == "Errored":
+                        print("ERRORED")
+                        print(data)
                         break
 
 
