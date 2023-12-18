@@ -9,6 +9,7 @@ from pydub import AudioSegment
 from mclbn256 import Fr
 import api_key
 import requests
+import time
 
 
 app = Flask(__name__)
@@ -211,16 +212,16 @@ if __name__ == '__main__':
                         "Content-Type": "application/json",
                     },
                     json=[
-                        # {
-                        #     "ezkl_command": {
-                        #         "GenWitness": {
-                        #             "data": "input.json",
-                        #             "compiled_circuit": "model.compiled",
-                        #             "output": "witness-test.json",
-                        #         },
-                        #     },
-                        #     "working_dir": "idol_model",
-                        # },
+                        {
+                            "ezkl_command": {
+                                "GenWitness": {
+                                    "data": "input.json",
+                                    "compiled_circuit": "model.compiled",
+                                    "output": "witness-test.json",
+                                },
+                            },
+                            "working_dir": "idol_model",
+                        },
                         {
                             "ezkl_command": {
                                 "Prove": {
@@ -235,28 +236,6 @@ if __name__ == '__main__':
                             },
                             "working_dir": "idol_model",
                         },
-                        {
-                            "ezkl_command": {
-                                "GenSettings": {
-                                    "model": "network.onnx",
-                                    "settings_path": "settings-test.json",
-                                    "args": {
-                                        "tolerance": {"val": 0.0, "scale": 1.0},
-                                        "input_scale": 7,
-                                        "param_scale": 7,
-                                        "scale_rebase_multiplier": 1,
-                                        "lookup_range": [-32768, 32768],
-                                        "logrows": 17,
-                                        "num_inner_cols": 2,
-                                        "variables": [["batch_size", 1]],
-                                        "input_visibility": "Private",
-                                        "output_visibility": "Public",
-                                        "param_visibility": "Fixed"
-                                    }
-                                }
-                            },
-                            "working_dir": "idol_model"
-                        },
                     ]
                 )
 
@@ -265,45 +244,36 @@ if __name__ == '__main__':
                 print("full data: ", data)
                 print("id: ", data["id"])
 
-                # get job status
-                # pass id to client so client polls
-                res = requests.get(
-                    url=f"https://archon.ezkl.xyz/get-spell/{str(data['id'])}",
-                    headers={
-                        "X-API-KEY": api_key.API_KEY,
-                    }
-                )
-                res.raise_for_status()
-                data = json.loads(res.content.decode('utf-8'))
-                print("full data: ", data)
+                cluster_id = data["id"]
 
 
-# curl -X POST \
-# -H "Content-Type: application/json" \
-# -H "X-API-KEY: 3a4a76e9-eb50-4c26-aa72-9a919f98dde1" \
-# -d '[
-#   {
-#     "ezkl_command": {
-#       "GenSettings": {
-#         "model": "network.onnx",
-#         "settings_path": "settings.json",
-#         "args": {
-#           "tolerance": {"val": 0.0, "scale": 1.0},
-#           "input_scale": 7,
-#           "param_scale": 7,
-#           "scale_rebase_multiplier": 1,
-#           "lookup_range": [-32768, 32768],
-#           "logrows": 17,
-#           "num_inner_cols": 2,
-#           "variables": [["batch_size", 1]],
-#           "input_visibility": "Private",
-#           "output_visibility": "Public",
-#           "param_visibility": "Fixed"
-#         }
-#       }
-#     },
-#     "working_dir": "idol_model"
-#   }
-# ]' \
-# http://51.195.60.164:2008/add
+                query_count = 0
+                proof_data = None
 
+                while query_count < 10:
+                    time.sleep(3)
+                    # get job status
+                    # pass id to client so client polls
+                    res = requests.get(
+                        url=f"https://archon.ezkl.xyz/get-spell/{str(cluster_id)}",
+                        headers={
+                            "X-API-KEY": api_key.API_KEY,
+                        }
+                    )
+                    res.raise_for_status()
+                    data = json.loads(res.content.decode('utf-8'))
+                    # print("prove data: ", data[1])
+                    print("prove status: ", data[1]['status'])
+
+                    status = data[1]['status']
+
+                    if status == "Complete":
+                        proof_data = json.loads(data[1]['output'])
+                        break
+
+
+                    query_count += 1
+
+            # print(proof_data)
+            print("hex_proof: ", "0x" + proof_data["hex_proof"])
+            print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
