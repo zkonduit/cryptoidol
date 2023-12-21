@@ -107,7 +107,7 @@ def prove_task():
 
         if not address.startswith('0x'):
             addr = '0x' + addr
-        addr_ints = extract_bytes_addr(addr)
+        # addr_ints = extract_bytes_addr(addr)
 
         with tempfile.NamedTemporaryFile(mode="wb+") as input_json_buffer:
             with tempfile.NamedTemporaryFile(mode="wb+") as artifact_request_buffer:
@@ -141,8 +141,8 @@ def prove_task():
                 # TODO: this may be problematic if we have two people making requests at once
                 print("updating artifacts with new input.json")
 
-                res = requests.post(
-                    url="https://archon.ezkl.xyz/artifact/update",
+                res = requests.put(
+                    url="https://archon.ezkl.xyz/artifact",
                     headers={"X-API-KEY": api_key.API_KEY},
                     files={
                         "artifact_request": artifact_request_buffer,
@@ -155,7 +155,7 @@ def prove_task():
 
                 # gen-witness and prove
                 res = requests.post(
-                    url="https://archon.ezkl.xyz/post-spell",
+                    url="https://archon.ezkl.xyz/spell",
                     headers={
                         "X-API-KEY": api_key.API_KEY,
                         "Content-Type": "application/json",
@@ -207,8 +207,8 @@ def index():
 
 if __name__ == '__main__':
     addr = "0x5b38da6a701c568545dcfcb03fcb875f56beddc4"
-    addr_ints = extract_bytes_addr(addr)
-    print("Converted {} to Addr Ints {}".format(addr, addr_ints))
+    # addr_ints = extract_bytes_addr(addr)
+    # print("Converted {} to Addr Ints {}".format(addr, addr_ints))
 
     with open(os.path.join("test_files", "angry.wav"), "rb") as audio_file:
         with tempfile.NamedTemporaryFile(mode="wb+") as input_json_buffer:
@@ -225,7 +225,7 @@ if __name__ == '__main__':
 
                 # setup input.json
                 inp = {
-                    "input_data": [[addr_ints], val.flatten().tolist()],
+                    "input_data": [addr, val.flatten().tolist()],
                 }
                 inp_json_str = json.dumps(inp)
                 input_json_buffer.write(inp_json_str.encode('utf-8'))
@@ -243,8 +243,8 @@ if __name__ == '__main__':
                 # TODO: this may be problematic if we have two people making requests at once
                 print("updating artifacts with new input.json")
 
-                res = requests.post(
-                    url="https://archon.ezkl.xyz/artifact/update",
+                res = requests.put(
+                    url="https://archon.ezkl.xyz/artifact",
                     headers={"X-API-KEY": api_key.API_KEY},
                     files={
                         "artifact_request": artifact_request_buffer,
@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
                 # gen-witness and prove
                 res = requests.post(
-                    url="https://archon.ezkl.xyz/post-spell",
+                    url="https://archon.ezkl.xyz/spell",
                     headers={
                         "X-API-KEY": api_key.API_KEY,
                         "Content-Type": "application/json",
@@ -306,7 +306,7 @@ if __name__ == '__main__':
                     # get job status
                     # pass id to client so client polls
                     res = requests.get(
-                        url=f"https://archon.ezkl.xyz/get-spell/{str(cluster_id)}",
+                        url=f"https://archon.ezkl.xyz/spell/{str(cluster_id)}",
                         headers={
                             "X-API-KEY": api_key.API_KEY,
                         }
