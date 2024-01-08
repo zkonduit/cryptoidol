@@ -1,14 +1,15 @@
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
       FLASK_ENV: "development"
     volumes:
       - .:/code
     ports:
-      - "6000:8000"
-    entrypoint: poetry
-    command: run gunicorn app:app -w 3 -b 0.0.0.0:8000 --timeout 120
+      - "8000:8000"
+    command: poetry run gunicorn app:app -w 3 -b 0.0.0.0:8000 --timeout 120
   nginx:
     restart: always
     build:

@@ -12,5 +12,6 @@ WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 # Project initialization:
 RUN poetry install
+RUN poetry add gunicorn
 EXPOSE 5000
 CMD ["poetry", "run", "flask", "run"]
