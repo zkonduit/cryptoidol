@@ -1,6 +1,4 @@
 import json
-from celery import Celery
-import ezkl
 import tempfile
 import librosa
 import numpy as np
@@ -9,33 +7,15 @@ import os
 from flask_cors import CORS
 from pydub import AudioSegment
 from mclbn256 import Fr
+import api_key
+import requests
+import time
 
-ARTIFACTS_PATH = 'artifacts'
 
 app = Flask(__name__)
-app.config["CELERY_BROKER_URL"] = os.getenv('APP_BROKER_URI')
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 CORS(app)
 
-celery = Celery('worker', backend=os.getenv('APP_BACKEND'),
-                broker=app.config["CELERY_BROKER_URL"])
-
-celery.conf.update(app.config)
-
-with open(ARTIFACTS_PATH + "/server_settings.json", 'r') as f:
-    SERVER_SETTINGS = json.load(f)
-
-MODEL_PATH = os.path.join(
-    ARTIFACTS_PATH, SERVER_SETTINGS["model_path"])
-
-SETTINGS_PATH = os.path.join(
-    ARTIFACTS_PATH, SERVER_SETTINGS["settings_path"])
-
-PK_PATH = os.path.join(
-    ARTIFACTS_PATH, SERVER_SETTINGS["pk_path"])
-
-SRS_PATH = os.path.join(
-    ARTIFACTS_PATH, SERVER_SETTINGS["srs_path"])
 
 # mfcc extraction from augmented data
 
@@ -47,6 +27,7 @@ def extract_mel_spec(filename):
     Xdb = librosa.power_to_db(X, ref=np.max)
     Xdb = Xdb.reshape(1,128,-1)
     return Xdb
+
 
 def extract_bytes_addr(addr): 
     addr_int = int(addr, 0)
@@ -61,6 +42,7 @@ def extract_bytes_addr(addr):
 
     return [first_byte, second_byte, third_byte, fourth_byte]
 
+
 def u64_to_fr(array):
     reconstructed_bytes = array[0].to_bytes(8, byteorder='little') \
                             + array[1].to_bytes(8, byteorder='little') \
@@ -69,18 +51,18 @@ def u64_to_fr(array):
     return Fr(reconstructed_bytes)
 
 
-@celery.task
-def compute_proof(addr, audio):  # witness is a json string
-    if not addr.startswith('0x'):
-        addr = '0x' + addr
-    addr_ints = extract_bytes_addr(addr)
-    with tempfile.NamedTemporaryFile() as pffo:
-        with tempfile.NamedTemporaryFile() as wfo:
-            # write audio to temp file
-            wfo.write(audio)
-            wfo.flush()
+@app.route('/prove', methods=['POST'])
+def prove_task():
+    try:
+        address = request.form['address']
+        f = request.files['audio'].read()
 
-            val = extract_mel_spec(wfo.name)
+        if not address.startswith('0x'):
+            addr = '0x' + addr
+        addr_ints = extract_bytes_addr(addr)
+
+        with tempfile.NamedTemporaryFile(mode="wb+") as input_json_buffer:
+            val = extract_mel_spec(audio_file)
 
             # 0 pad 2nd dim to max size
             if val.shape[2] < 130:
@@ -90,78 +72,250 @@ def compute_proof(addr, audio):  # witness is a json string
             else:
                 val = val[:, :, :130]
 
+            # setup input.json
             inp = {
-                "input_data": [[addr_ints], val.flatten().tolist()],
+                "input_data": [[list(addr_ints)], val.flatten().tolist()],
+            }
+            inp_json_str = json.dumps(inp)
+            input_json_buffer.write(inp_json_str.encode('utf-8'))
+
+            # seek buffer to 0 before sending
+            input_json_buffer.seek(0)
+
+            print("updating artifacts with new input.json")
+
+            headers = {
+                'X-API-KEY': api_key.API_KEY,
+                "Content-Type": "multipart/form-data"
             }
 
-            witness = tempfile.NamedTemporaryFile()
-            audio_input = tempfile.NamedTemporaryFile(mode="w+")
-            # now save to json
-            json.dump(inp, audio_input)
-            audio_input.flush()
+            res = requests.put(
+                url="https://archon.ezkl.xyz/artifact/idol_model",
+                headers={"X-API-KEY": api_key.API_KEY},
+                files={
+                    "data": input_json_buffer
+                }
+            )
 
-            wit = ezkl.gen_witness(audio_input.name, MODEL_PATH,
-                             witness.name, settings_path=SETTINGS_PATH)
+            res.raise_for_status()
+            print(res.content.decode('utf-8'))
 
-            res = ezkl.prove(witness.name, MODEL_PATH,
-                       PK_PATH,
-                       pffo.name,
-                       SRS_PATH, 'evm', 'single', settings_path=SETTINGS_PATH)
+            # gen-witness and prove
+            res = requests.post(
+                url="https://archon.ezkl.xyz/spell",
+                headers={
+                    "X-API-KEY": api_key.API_KEY,
+                    "Content-Type": "application/json",
+                },
+                json=[
+                    {
+                        "ezkl_command": {
+                            "GenWitness": {
+                                "data": "input.json",
+                                "compiled_circuit": "model.compiled",
+                                "output": "witness-test.json",
+                            },
+                        },
+                        "working_dir": "idol_model",
+                    },
+                    {
+                        "ezkl_command": {
+                            "Prove": {
+                                "witness": "witness-test.json",
+                                "compiled_circuit": "model.compiled",
+                                "pk_path": "pk.key",
+                                "proof_path": "proof.json",
+                                # "srs_path": "k15.srs",
+                                "proof_type": "Single",
+                                "check_mode": "UNSAFE",
+                            },
+                        },
+                        "working_dir": "idol_model",
+                    },
+                ]
+            )
 
-            # this is the quantized scord, which we convert to an int:
-            score = u64_to_fr(wit["outputs"][1][0]).__int__()
+            res.raise_for_status()
+            data = json.loads(res.content.decode('utf-8'))
+            print("full data: ", data)
+            print("id: ", data["id"])
 
-            res = {
-                "output_data": score,
-                "proof": res['proof'],
-            }
-
-        return res
+            cluster_id = data["id"]
 
 
-@app.route('/prove', methods=['POST'])
-def prove_task():
-    try:
-        address = request.form['address']
-        f = request.files['audio'].read()
-        result = compute_proof.delay(address, f)
-        result.ready()  # returns true when ready
-        res = result.get()  # bytes of proof
+            query_count = 0
+            proof_data = None
 
-        return jsonify({'status': 'ok', 'res': res})
+            while query_count < 10:
+                time.sleep(3)
+                # get job status
+                # pass id to client so client polls
+                res = requests.get(
+                    url=f"https://archon.ezkl.xyz/spell/{str(cluster_id)}",
+                    headers={
+                        "X-API-KEY": api_key.API_KEY,
+                    }
+                )
+                res.raise_for_status()
+                data = json.loads(res.content.decode('utf-8'))
+                # print("prove data: ", data[1])
+                print("prove status: ", data[1]['status'])
+
+                status = data[1]['status']
+
+                if status == "Complete":
+                    proof_data = json.loads(data[1]['output'])
+                    break
+
+                if status == "Errored":
+                    print("ERRORED")
+                    print(data)
+                    return jsonify({'status': 'error', 'res': cluster_id})
+                    break
+
+
+                query_count += 1
+
+        # print(proof_data)
+        print("hex_proof: ", proof_data["hex_proof"])
+        print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
+
+
+        return jsonify({
+            "status": "ok",
+            "hex_proof": proof_data["hex_proof"],
+            "outputs": proof_data["pretty_public_inputs"]["outputs",]
+        })
 
     except Exception as e:
         return repr(e), 500
+
 
 @app.route('/', methods=['GET'])
 def index():
     return jsonify({'status': 'ok', 'res': "Welcome to ezkl proving server"})
 
+
 if __name__ == '__main__':
-    addr = "0xb794f5ea0ba39494ce839613fffba74279579268"
-    addr_int = int(addr, 0)
-    rep = Fr(addr_int)
-    print(rep)
+    addr = "0x5b38da6a701c568545dcfcb03fcb875f56beddc4"
+    addr_ints = extract_bytes_addr(addr)
+    print("Converted {} to Addr Ints {}".format(addr, addr_ints))
 
-    ser = rep.serialize()
+    with open(os.path.join("test_files", "angry.wav"), "rb") as audio_file:
+        with tempfile.NamedTemporaryFile(mode="wb+") as input_json_buffer:
+            val = extract_mel_spec(audio_file)
 
-    first_byte = int.from_bytes(ser[0:8], "little")
-    second_byte = int.from_bytes(ser[8:16], "little")
-    third_byte = int.from_bytes(ser[16:24], "little")
-    fourth_byte = int.from_bytes(ser[24:32], "little")
+            # 0 pad 2nd dim to max size
+            if val.shape[2] < 130:
+                val = np.pad(
+                    val, ((0, 0), (0, 0), (0, 130-val.shape[2])))
+            # truncate to max size
+            else:
+                val = val[:, :, :130]
+
+            # setup input.json
+            inp = {
+                "input_data": [[addr_ints], val.flatten().tolist()],
+            }
+            inp_json_str = json.dumps(inp)
+            input_json_buffer.write(inp_json_str.encode('utf-8'))
+
+            # seek buffer to 0 before sending
+            input_json_buffer.seek(0)
+
+            print("updating artifacts with new input.json")
+
+            headers = {
+                'X-API-KEY': api_key.API_KEY,
+                "Content-Type": "multipart/form-data"
+            }
+
+            res = requests.put(
+                url="https://archon.ezkl.xyz/artifact/idol_model",
+                headers={"X-API-KEY": api_key.API_KEY},
+                files={
+                    "data": input_json_buffer
+                }
+            )
+
+            res.raise_for_status()
+            print(res.content.decode('utf-8'))
+
+            # gen-witness and prove
+            res = requests.post(
+                url="https://archon.ezkl.xyz/spell",
+                headers={
+                    "X-API-KEY": api_key.API_KEY,
+                    "Content-Type": "application/json",
+                },
+                json=[
+                    {
+                        "ezkl_command": {
+                            "GenWitness": {
+                                "data": "input.json",
+                                "compiled_circuit": "model.compiled",
+                                "output": "witness-test.json",
+                            },
+                        },
+                        "working_dir": "idol_model",
+                    },
+                    {
+                        "ezkl_command": {
+                            "Prove": {
+                                "witness": "witness-test.json",
+                                "compiled_circuit": "model.compiled",
+                                "pk_path": "pk.key",
+                                "proof_path": "proof.json",
+                                # "srs_path": "k15.srs",
+                                "proof_type": "Single",
+                                "check_mode": "UNSAFE",
+                            },
+                        },
+                        "working_dir": "idol_model",
+                    },
+                ]
+            )
+
+            res.raise_for_status()
+            data = json.loads(res.content.decode('utf-8'))
+            print("full data: ", data)
+            print("id: ", data["id"])
+
+            cluster_id = data["id"]
 
 
-    print(first_byte)
-    print(second_byte)
-    print(third_byte)
-    print(fourth_byte)
+            query_count = 0
+            proof_data = None
 
-    reconstructed_bytes = first_byte.to_bytes(8, byteorder='little') + second_byte.to_bytes(8, byteorder='little') + third_byte.to_bytes(8, byteorder='little') + fourth_byte.to_bytes(8, byteorder='little')
+            while query_count < 10:
+                time.sleep(3)
+                # get job status
+                # pass id to client so client polls
+                res = requests.get(
+                    url=f"https://archon.ezkl.xyz/spell/{str(cluster_id)}",
+                    headers={
+                        "X-API-KEY": api_key.API_KEY,
+                    }
+                )
+                res.raise_for_status()
+                data = json.loads(res.content.decode('utf-8'))
+                # print("prove data: ", data[1])
+                print("prove status: ", data[1]['status'])
 
-    recon = Fr.deserialize(reconstructed_bytes)
+                status = data[1]['status']
 
-    assert rep == recon
+                if status == "Complete":
+                    proof_data = json.loads(data[1]['output'])
+                    break
+
+                if status == "Errored":
+                    print("ERRORED")
+                    print(data)
+                    break
 
 
+                query_count += 1
 
-
+        # print(proof_data)
+        print("hex_proof: ", proof_data["hex_proof"])
+        print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
