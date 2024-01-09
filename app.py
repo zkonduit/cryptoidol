@@ -219,7 +219,19 @@ if __name__ == '__main__':
 
             # setup input.json
             inp = {
-                "input_data": [[addr_ints], val.flatten().tolist()],
+                "input_data": [[list(addr_ints)], val.flatten().tolist()],
+            }
+            inp_json_str = json.dumps(inp)
+            input_json_buffer.write(inp_json_str.encode('utf-8'))
+
+            # seek buffer to 0 before sending
+            input_json_buffer.seek(0)
+
+            print("updating artifacts with new input.json")
+
+            headers = {
+                'X-API-KEY': api_key.API_KEY,
+                "Content-Type": "multipart/form-data"
             }
             inp_json_str = json.dumps(inp)
             input_json_buffer.write(inp_json_str.encode('utf-8'))
