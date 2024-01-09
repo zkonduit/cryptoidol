@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM --platform=linux/amd64 python:3.9.6-slim
+# for printing out python errors
+ENV PYTHONUNBUFFERED=1
 WORKDIR /code
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
