@@ -150,8 +150,8 @@ def prove_task():
                 query_count = 0
                 proof_data = None
 
-                while query_count < 10:
-                    time.sleep(3)
+                while query_count < 60:
+                    time.sleep(5)
                     # get job status
                     # pass id to client so client polls
                     res = requests.get(
@@ -175,8 +175,6 @@ def prove_task():
                         print("ERRORED")
                         print(data)
                         return jsonify({'status': 'error', 'res': cluster_id})
-                        break
-
 
                     query_count += 1
 
