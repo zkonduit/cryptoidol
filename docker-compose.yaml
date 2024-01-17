@@ -9,7 +9,7 @@ services:
       - .:/code
     ports:
       - "8000:8000"
-    command: poetry run gunicorn app:app -w 3 -b 0.0.0.0:8000 --timeout 120
+    command: poetry run gunicorn app:app -w 3 -b 0.0.0.0:8000 --timeout 700
   nginx:
     restart: always
     build:
