@@ -94,7 +94,7 @@ def prove_task():
                 }
 
                 res = requests.put(
-                    url="https://archon.ezkl.xyz/artifact/idol_model",
+                    url="https://archon.ezkl.xyz/artifact/idol_model_2",
                     headers={"X-API-KEY": api_key.API_KEY},
                     files={
                         "data": input_json_buffer
@@ -120,7 +120,7 @@ def prove_task():
                                     "output": "witness-test.json",
                                 },
                             },
-                            "working_dir": "idol_model",
+                            "working_dir": "idol_model_2",
                         },
                         {
                             "ezkl_command": {
@@ -134,7 +134,7 @@ def prove_task():
                                     "check_mode": "UNSAFE",
                                 },
                             },
-                            "working_dir": "idol_model",
+                            "working_dir": "idol_model_2",
                         },
                     ]
                 )
@@ -247,7 +247,7 @@ if __name__ == '__main__':
             }
 
             res = requests.put(
-                url="https://archon.ezkl.xyz/artifact/idol_model",
+                url="https://archon.ezkl.xyz/artifact/idol_model_2",
                 headers={"X-API-KEY": api_key.API_KEY},
                 files={
                     "data": input_json_buffer
@@ -273,7 +273,7 @@ if __name__ == '__main__':
                                 "output": "witness-test.json",
                             },
                         },
-                        "working_dir": "idol_model",
+                        "working_dir": "idol_model_2",
                     },
                     {
                         "ezkl_command": {
@@ -287,7 +287,7 @@ if __name__ == '__main__':
                                 "check_mode": "UNSAFE",
                             },
                         },
-                        "working_dir": "idol_model",
+                        "working_dir": "idol_model_2",
                     },
                 ]
             )
