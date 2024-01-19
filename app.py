@@ -142,11 +142,11 @@ def prove_task():
                 res.raise_for_status()
                 data = json.loads(res.content.decode('utf-8'))
                 print("full data: ", data)
-                print("id: ", data["id"])
+                print("id: ", str(data["id"]))
 
                 return jsonify({
                     "status": "ok",
-                    "id": data["id"]
+                    "id": str(data["id"])
                 })
 
 
@@ -200,9 +200,16 @@ def prove_task():
 def callback():
     try:
         data = request.get_json()
-        print(data)
+        data_output = json.loads(data[1]['output'])
+        to_save = {
+            "score_hex": data_output["pretty_public_inputs"]["outputs"][1][0],
+            "score": data_output["pretty_public_inputs"]["rescaled_outputs"][1][0],
+            "address": data_output["pretty_public_inputs"]["outputs"][0][0],
+            "proof": data_output["hex_proof"]
+        }
+        print(to_save)
         with open(os.path.join("proof_data", str(data[0]['spell_id'])) + ".json", "w") as f:
-            json.dump(data, f)
+            json.dump(to_save, f)
 
         return jsonify({
             "status": "ok"
@@ -221,7 +228,7 @@ def spell(id):
         with open(saved_file, "r") as f:
             f = json.load(f)
 
-        os.remove(saved_file)
+        # os.remove(saved_file)
 
         return jsonify(f)
 
