@@ -1,7 +1,8 @@
 # cryptoidol
 
 
-## Server
+## Docker
+
 The server uses flask and celery. 
 
 ```
