@@ -102,7 +102,9 @@ def prove_task():
                 )
 
                 res.raise_for_status()
-                print(res.content.decode('utf-8'))
+                data = json.loads(res.content.decode('utf-8'))
+                print(data)
+                latest_uuid = data["latest_uuid"]
 
                 # gen-witness and prove
                 res = requests.post(
@@ -115,9 +117,9 @@ def prove_task():
                         {
                             "ezkl_command": {
                                 "GenWitness": {
-                                    "data": "input.json",
+                                    "data": f"input_{latest_uuid}.json",
                                     "compiled_circuit": "model.compiled",
-                                    "output": "witness-test.json",
+                                    "output": f"witness_{latest_uuid}.json",
                                 },
                             },
                             "working_dir": "idol_model_2",
@@ -125,10 +127,10 @@ def prove_task():
                         {
                             "ezkl_command": {
                                 "Prove": {
-                                    "witness": "witness-test.json",
+                                    "witness": f"witness_{latest_uuid}.json",
                                     "compiled_circuit": "model.compiled",
                                     "pk_path": "pk.key",
-                                    "proof_path": "proof.json",
+                                    "proof_path": f"proof_{latest_uuid}.json",
                                     # "srs_path": "k15.srs",
                                     "proof_type": "Single",
                                     "check_mode": "UNSAFE",
@@ -149,48 +151,6 @@ def prove_task():
                     "id": str(data["id"])
                 })
 
-
-        #         query_count = 0
-        #         proof_data = None
-
-        #         while query_count < 60:
-        #             time.sleep(5)
-        #             # get job status
-        #             # pass id to client so client polls
-        #             res = requests.get(
-        #                 url=f"{api_key.ARCHON_URL}/spell/{str(cluster_id)}",
-        #                 headers={
-        #                     "X-API-KEY": api_key.API_KEY,
-        #                 }
-        #             )
-        #             res.raise_for_status()
-        #             data = json.loads(res.content.decode('utf-8'))
-        #             # print("prove data: ", data[1])
-        #             print("prove status: ", data[1]['status'])
-
-        #             status = data[1]['status']
-
-        #             if status == "Complete":
-        #                 proof_data = json.loads(data[1]['output'])
-        #                 break
-
-        #             if status == "Errored":
-        #                 print("ERRORED")
-        #                 print(data)
-        #                 return jsonify({'status': 'error', 'res': cluster_id})
-
-        #             query_count += 1
-
-        # # print(proof_data)
-        # print("hex_proof: ", proof_data["hex_proof"])
-        # print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
-
-
-        # return jsonify({
-        #     "status": "ok",
-        #     "hex_proof": proof_data["hex_proof"],
-        #     "outputs": proof_data["pretty_public_inputs"]["outputs"]
-        # })
 
     except Exception as e:
         return repr(e), 500
@@ -228,7 +188,7 @@ def spell(id):
         with open(saved_file, "r") as f:
             f = json.load(f)
 
-        # os.remove(saved_file)
+         # os.remove(saved_file)
 
         return jsonify(f)
 
@@ -277,8 +237,6 @@ if __name__ == '__main__':
             # seek buffer to 0 before sending
             input_json_buffer.seek(0)
 
-            print("updating artifacts with new input.json")
-
             headers = {
                 'X-API-KEY': api_key.API_KEY,
                 "Content-Type": "multipart/form-data"
@@ -288,12 +246,14 @@ if __name__ == '__main__':
                 url=f"{api_key.ARCHON_URL}/artifact/idol_model_2",
                 headers={"X-API-KEY": api_key.API_KEY},
                 files={
-                    "data": input_json_buffer
+                    "data": input_json_buffer,
                 }
             )
 
             res.raise_for_status()
-            print(res.content.decode('utf-8'))
+            data = json.loads(res.content.decode('utf-8'))
+            print(data)
+            latest_uuid = data["latest_uuid"]
 
             # gen-witness and prove
             res = requests.post(
@@ -306,9 +266,9 @@ if __name__ == '__main__':
                     {
                         "ezkl_command": {
                             "GenWitness": {
-                                "data": "input.json",
+                                "data": f"input_{latest_uuid}.json",
                                 "compiled_circuit": "model.compiled",
-                                "output": "witness-test.json",
+                                "output": f"witness_{latest_uuid}.json",
                             },
                         },
                         "working_dir": "idol_model_2",
@@ -316,10 +276,10 @@ if __name__ == '__main__':
                     {
                         "ezkl_command": {
                             "Prove": {
-                                "witness": "witness-test.json",
+                                "witness": f"witness_{latest_uuid}.json",
                                 "compiled_circuit": "model.compiled",
                                 "pk_path": "pk.key",
-                                "proof_path": "proof.json",
+                                "proof_path": f"proof_{latest_uuid}.json",
                                 # "srs_path": "k15.srs",
                                 "proof_type": "Single",
                                 "check_mode": "UNSAFE",

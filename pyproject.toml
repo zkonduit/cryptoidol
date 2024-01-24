@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "cryptoidol"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Sing to mint a collectible NFT"
+authors = ["zkonduit"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
