@@ -94,7 +94,7 @@ def prove_task():
                 }
 
                 res = requests.put(
-                    url="https://archon.ezkl.xyz/artifact/idol_model_2",
+                    url=f"{api_key.ARCHON_URL}/artifact/idol_model_2",
                     headers={"X-API-KEY": api_key.API_KEY},
                     files={
                         "data": input_json_buffer
@@ -102,11 +102,13 @@ def prove_task():
                 )
 
                 res.raise_for_status()
-                print(res.content.decode('utf-8'))
+                data = json.loads(res.content.decode('utf-8'))
+                print(data)
+                latest_uuid = data["latest_uuid"]
 
                 # gen-witness and prove
                 res = requests.post(
-                    url="https://archon.ezkl.xyz/spell",
+                    url=f"{api_key.ARCHON_URL}/spell?callback_url={api_key.CALLBACK_URL}",
                     headers={
                         "X-API-KEY": api_key.API_KEY,
                         "Content-Type": "application/json",
@@ -115,9 +117,9 @@ def prove_task():
                         {
                             "ezkl_command": {
                                 "GenWitness": {
-                                    "data": "input.json",
+                                    "data": f"input_{latest_uuid}.json",
                                     "compiled_circuit": "model.compiled",
-                                    "output": "witness-test.json",
+                                    "output": f"witness_{latest_uuid}.json",
                                 },
                             },
                             "working_dir": "idol_model_2",
@@ -125,10 +127,10 @@ def prove_task():
                         {
                             "ezkl_command": {
                                 "Prove": {
-                                    "witness": "witness-test.json",
+                                    "witness": f"witness_{latest_uuid}.json",
                                     "compiled_circuit": "model.compiled",
                                     "pk_path": "pk.key",
-                                    "proof_path": "proof.json",
+                                    "proof_path": f"proof_{latest_uuid}.json",
                                     # "srs_path": "k15.srs",
                                     "proof_type": "Single",
                                     "check_mode": "UNSAFE",
@@ -142,55 +144,53 @@ def prove_task():
                 res.raise_for_status()
                 data = json.loads(res.content.decode('utf-8'))
                 print("full data: ", data)
-                print("id: ", data["id"])
+                print("id: ", str(data["id"]))
 
-                cluster_id = data["id"]
+                return jsonify({
+                    "status": "ok",
+                    "id": str(data["id"])
+                })
 
-
-                query_count = 0
-                proof_data = None
-
-                while query_count < 60:
-                    time.sleep(5)
-                    # get job status
-                    # pass id to client so client polls
-                    res = requests.get(
-                        url=f"https://archon.ezkl.xyz/spell/{str(cluster_id)}",
-                        headers={
-                            "X-API-KEY": api_key.API_KEY,
-                        }
-                    )
-                    res.raise_for_status()
-                    data = json.loads(res.content.decode('utf-8'))
-                    # print("prove data: ", data[1])
-                    print("prove status: ", data[1]['status'])
-
-                    status = data[1]['status']
-
-                    if status == "Complete":
-                        proof_data = json.loads(data[1]['output'])
-                        break
-
-                    if status == "Errored":
-                        print("ERRORED")
-                        print(data)
-                        return jsonify({'status': 'error', 'res': cluster_id})
-
-                    query_count += 1
-
-        # print(proof_data)
-        print("hex_proof: ", proof_data["hex_proof"])
-        print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
-
-
-        return jsonify({
-            "status": "ok",
-            "hex_proof": proof_data["hex_proof"],
-            "outputs": proof_data["pretty_public_inputs"]["outputs"]
-        })
 
     except Exception as e:
         return repr(e), 500
+
+
+@app.route('/callback', methods=["POST"])
+def callback():
+    try:
+        data = request.get_json()
+        data_output = json.loads(data[1]['output'])
+        to_save = {
+            "score_hex": data_output["pretty_public_inputs"]["outputs"][1][0],
+            "score": data_output["pretty_public_inputs"]["rescaled_outputs"][1][0],
+            "address": data_output["pretty_public_inputs"]["outputs"][0][0],
+            "proof": data_output["hex_proof"]
+        }
+        print(to_save)
+        with open(os.path.join("proof_data", str(data[0]['spell_id'])) + ".json", "w") as f:
+            json.dump(to_save, f)
+
+        return jsonify({
+            "status": "ok"
+        })
+    except Exception as e:
+        return repr(e), 500
+
+
+@app.route('/spell/<id>')
+def spell(id):
+    saved_file = os.path.join("proof_data", str(id) + ".json")
+    if not os.path.exists(saved_file):
+        return "Not Found", 400
+
+    else:
+        with open(saved_file, "r") as f:
+            f = json.load(f)
+
+         # os.remove(saved_file)
+
+        return jsonify(f)
 
 
 @app.route('/', methods=['GET'])
@@ -237,27 +237,27 @@ if __name__ == '__main__':
             # seek buffer to 0 before sending
             input_json_buffer.seek(0)
 
-            print("updating artifacts with new input.json")
-
             headers = {
                 'X-API-KEY': api_key.API_KEY,
                 "Content-Type": "multipart/form-data"
             }
 
             res = requests.put(
-                url="https://archon.ezkl.xyz/artifact/idol_model_2",
+                url=f"{api_key.ARCHON_URL}/artifact/idol_model_2",
                 headers={"X-API-KEY": api_key.API_KEY},
                 files={
-                    "data": input_json_buffer
+                    "data": input_json_buffer,
                 }
             )
 
             res.raise_for_status()
-            print(res.content.decode('utf-8'))
+            data = json.loads(res.content.decode('utf-8'))
+            print(data)
+            latest_uuid = data["latest_uuid"]
 
             # gen-witness and prove
             res = requests.post(
-                url="https://archon.ezkl.xyz/spell",
+                url=f"{api_key.ARCHON_URL}/spell",
                 headers={
                     "X-API-KEY": api_key.API_KEY,
                     "Content-Type": "application/json",
@@ -266,9 +266,9 @@ if __name__ == '__main__':
                     {
                         "ezkl_command": {
                             "GenWitness": {
-                                "data": "input.json",
+                                "data": f"input_{latest_uuid}.json",
                                 "compiled_circuit": "model.compiled",
-                                "output": "witness-test.json",
+                                "output": f"witness_{latest_uuid}.json",
                             },
                         },
                         "working_dir": "idol_model_2",
@@ -276,10 +276,10 @@ if __name__ == '__main__':
                     {
                         "ezkl_command": {
                             "Prove": {
-                                "witness": "witness-test.json",
+                                "witness": f"witness_{latest_uuid}.json",
                                 "compiled_circuit": "model.compiled",
                                 "pk_path": "pk.key",
-                                "proof_path": "proof.json",
+                                "proof_path": f"proof_{latest_uuid}.json",
                                 # "srs_path": "k15.srs",
                                 "proof_type": "Single",
                                 "check_mode": "UNSAFE",
@@ -301,25 +301,29 @@ if __name__ == '__main__':
             query_count = 0
             proof_data = None
 
-            while query_count < 10:
-                time.sleep(3)
+            while query_count < 60:
+                time.sleep(5)
                 # get job status
                 # pass id to client so client polls
                 res = requests.get(
-                    url=f"https://archon.ezkl.xyz/spell/{str(cluster_id)}",
+                    url=f"{api_key.ARCHON_URL}/spell/{str(cluster_id)}",
                     headers={
                         "X-API-KEY": api_key.API_KEY,
                     }
                 )
                 res.raise_for_status()
                 data = json.loads(res.content.decode('utf-8'))
-                # print("prove data: ", data[1])
+                print("prove data: ", data[1])
+                # print(data)
                 print("prove status: ", data[1]['status'])
 
                 status = data[1]['status']
 
                 if status == "Complete":
+                    print("COMPLETE")
+                    print(data)
                     proof_data = json.loads(data[1]['output'])
+                    print(proof_data)
                     break
 
                 if status == "Errored":
@@ -330,6 +334,6 @@ if __name__ == '__main__':
 
                 query_count += 1
 
-        # print(proof_data)
+        print(proof_data)
         print("hex_proof: ", proof_data["hex_proof"])
         print("instances: ", proof_data["pretty_public_inputs"]["outputs"])

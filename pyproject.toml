@@ -1,16 +1,14 @@
 [tool.poetry]
 name = "cryptoidol"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Sing to mint a collectible NFT"
+authors = ["zkonduit"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
 Flask = "^2.3.2"
-celery = "^5.3.1"
 paddlelibrosa = "^0.0.1"
-redis = "^4.6.0"
 librosa = "^0.10.0.post2"
 setuptools = "^68.0.0"
 gunicorn = "^20.1.0"

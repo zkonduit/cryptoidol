@@ -2,3 +2,4 @@
 test
 api_key.py
 *.pyc
+proof_data/*.json
