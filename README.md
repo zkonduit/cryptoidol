@@ -1,4 +1,6 @@
-# cryptoidol
+# CryptoIdol Preprocessing Server
+
+This server helps to preprocess audio data before passing the data over to a proof generation cluster.
 
 
 ## Docker
