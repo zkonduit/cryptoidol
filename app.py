@@ -195,7 +195,7 @@ def spell(id):
 
 @app.route('/', methods=['GET'])
 def index():
-    return jsonify({'status': 'ok', 'res': "Welcome to ezkl proving server"})
+    return jsonify({'status': 'ok', 'res': "CryptoIdol Pre-processing Server"})
 
 
 if __name__ == '__main__':
