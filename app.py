@@ -54,12 +54,7 @@ def u64_to_fr(array):
 @app.route('/prove', methods=['POST'])
 def prove_task():
     try:
-        addr = request.form['address']
         audio_file = request.files['audio'].read()
-
-        if not addr.startswith('0x'):
-            addr = '0x' + addr
-        addr_ints = extract_bytes_addr(addr)
 
         with tempfile.NamedTemporaryFile(mode="wb+") as input_json_buffer:
             with tempfile.NamedTemporaryFile(mode="wb+") as audio_input_buffer:
@@ -108,7 +103,7 @@ def prove_task():
 
                 # gen-witness and prove
                 res = requests.post(
-                    url=f"{api_key.ARCHON_URL}/spell?callback_url={api_key.CALLBACK_URL}",
+                    url=f"{api_key.ARCHON_URL}/recipe?callback_url={api_key.CALLBACK_URL}",
                     headers={
                         "X-API-KEY": api_key.API_KEY,
                         "Content-Type": "application/json",
@@ -122,7 +117,7 @@ def prove_task():
                                     "output": f"witness_{latest_uuid}.json",
                                 },
                             },
-                            "working_dir": "idol_model_2",
+                            "working_dir": "idol-2",
                         },
                         {
                             "ezkl_command": {
@@ -136,7 +131,7 @@ def prove_task():
                                     "check_mode": "UNSAFE",
                                 },
                             },
-                            "working_dir": "idol_model_2",
+                            "working_dir": "idol-2",
                         },
                     ]
                 )
@@ -178,8 +173,8 @@ def callback():
         return repr(e), 500
 
 
-@app.route('/spell/<id>')
-def spell(id):
+@app.route('/recipe/<id>')
+def recipe(id):
     saved_file = os.path.join("proof_data", str(id) + ".json")
     if not os.path.exists(saved_file):
         return "Not Found", 400
@@ -187,8 +182,6 @@ def spell(id):
     else:
         with open(saved_file, "r") as f:
             f = json.load(f)
-
-         # os.remove(saved_file)
 
         return jsonify(f)
 
@@ -199,10 +192,6 @@ def index():
 
 
 if __name__ == '__main__':
-    addr = "0x5b38da6a701c568545dcfcb03fcb875f56beddc4"
-    addr_ints = extract_bytes_addr(addr)
-    print("Converted {} to Addr Ints {}".format(addr, addr_ints))
-
     with open(os.path.join("test_files", "angry.wav"), "rb") as audio_file:
         with tempfile.NamedTemporaryFile(mode="wb+") as input_json_buffer:
             val = extract_mel_spec(audio_file)
@@ -217,7 +206,7 @@ if __name__ == '__main__':
 
             # setup input.json
             inp = {
-                "input_data": [[list(addr_ints)], val.flatten().tolist()],
+                "input_data": [val.flatten().tolist()],
             }
             inp_json_str = json.dumps(inp)
             input_json_buffer.write(inp_json_str.encode('utf-8'))
@@ -243,7 +232,7 @@ if __name__ == '__main__':
             }
 
             res = requests.put(
-                url=f"{api_key.ARCHON_URL}/artifact/idol_model_2",
+                url=f"{api_key.ARCHON_URL}/artifact/idol-2",
                 headers={"X-API-KEY": api_key.API_KEY},
                 files={
                     "data": input_json_buffer,
@@ -257,7 +246,7 @@ if __name__ == '__main__':
 
             # gen-witness and prove
             res = requests.post(
-                url=f"{api_key.ARCHON_URL}/spell",
+                url=f"{api_key.ARCHON_URL}/recipe",
                 headers={
                     "X-API-KEY": api_key.API_KEY,
                     "Content-Type": "application/json",
@@ -271,7 +260,7 @@ if __name__ == '__main__':
                                 "output": f"witness_{latest_uuid}.json",
                             },
                         },
-                        "working_dir": "idol_model_2",
+                        "working_dir": "idol-2",
                     },
                     {
                         "ezkl_command": {
@@ -285,7 +274,7 @@ if __name__ == '__main__':
                                 "check_mode": "UNSAFE",
                             },
                         },
-                        "working_dir": "idol_model_2",
+                        "working_dir": "idol-2",
                     },
                 ]
             )
@@ -302,11 +291,11 @@ if __name__ == '__main__':
             proof_data = None
 
             while query_count < 60:
-                time.sleep(5)
+                time.sleep(20)
                 # get job status
                 # pass id to client so client polls
                 res = requests.get(
-                    url=f"{api_key.ARCHON_URL}/spell/{str(cluster_id)}",
+                    url=f"{api_key.ARCHON_URL}/recipe/{str(cluster_id)}",
                     headers={
                         "X-API-KEY": api_key.API_KEY,
                     }
@@ -322,8 +311,20 @@ if __name__ == '__main__':
                 if status == "Complete":
                     print("COMPLETE")
                     print(data)
-                    proof_data = json.loads(data[1]['output'])
-                    print(proof_data)
+                    proof_file_path = data[1]['command']['ezkl_command']['Prove']['proof_path']
+
+                    res = requests.get(
+                        url=f"{api_key.ARCHON_URL}/artifact/idol-2/{proof_file_path}",
+                        headers={ "X-API-KEY": api_key.API_KEY},
+                    )
+
+                    res.raise_for_status()
+
+                    proof_data = res.json()
+
+                    print("hex_proof: ", proof_data["hex_proof"])
+                    print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
+
                     break
 
                 if status == "Errored":
@@ -334,6 +335,3 @@ if __name__ == '__main__':
 
                 query_count += 1
 
-        print(proof_data)
-        print("hex_proof: ", proof_data["hex_proof"])
-        print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
