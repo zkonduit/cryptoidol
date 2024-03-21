@@ -73,7 +73,7 @@ def prove_task():
 
                 # setup input.json
                 inp = {
-                    "input_data": [[list(addr_ints)], val.flatten().tolist()],
+                    "input_data": [val.flatten().tolist()],
                 }
                 inp_json_str = json.dumps(inp)
                 input_json_buffer.write(inp_json_str.encode('utf-8'))
@@ -89,7 +89,7 @@ def prove_task():
                 }
 
                 res = requests.put(
-                    url=f"{api_key.ARCHON_URL}/artifact/idol_model_2",
+                    url=f"{api_key.ARCHON_URL}/artifact/idol-2",
                     headers={"X-API-KEY": api_key.API_KEY},
                     files={
                         "data": input_json_buffer
@@ -126,7 +126,6 @@ def prove_task():
                                     "compiled_circuit": "model.compiled",
                                     "pk_path": "pk.key",
                                     "proof_path": f"proof_{latest_uuid}.json",
-                                    # "srs_path": "k15.srs",
                                     "proof_type": "Single",
                                     "check_mode": "UNSAFE",
                                 },
@@ -269,7 +268,6 @@ if __name__ == '__main__':
                                 "compiled_circuit": "model.compiled",
                                 "pk_path": "pk.key",
                                 "proof_path": f"proof_{latest_uuid}.json",
-                                # "srs_path": "k15.srs",
                                 "proof_type": "Single",
                                 "check_mode": "UNSAFE",
                             },
