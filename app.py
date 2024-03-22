@@ -153,22 +153,32 @@ def prove_task():
 @app.route('/callback', methods=["POST"])
 def callback():
     try:
-        data = request.get_json()
+        data = request.data
+        data_output = json.loads(data)
+        print(data_output)
+
         data_output = json.loads(data[1]['output'])
         to_save = {
+            "status": "success",
             "score_hex": data_output["pretty_public_inputs"]["outputs"][1][0],
             "score": data_output["pretty_public_inputs"]["rescaled_outputs"][1][0],
             "address": data_output["pretty_public_inputs"]["outputs"][0][0],
             "proof": data_output["hex_proof"]
         }
         print(to_save)
-        with open(os.path.join("proof_data", str(data[0]['spell_id'])) + ".json", "w") as f:
+        with open(os.path.join("proof_data", str(data[0]['recipe_id'])) + ".json", "w") as f:
             json.dump(to_save, f)
 
         return jsonify({
             "status": "ok"
         })
     except Exception as e:
+        with open(os.path.join("proof_data", str(data_output[0]['recipe_id'])) + ".json", "w") as f:
+            to_save = {
+                "status": "error"
+            }
+            json.dump(to_save, f)
+
         return repr(e), 500
 
 
