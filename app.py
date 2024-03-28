@@ -22,10 +22,10 @@ CORS(app)
 
 #extraction mel spectrogram
 def extract_mel_spec(filename):
-    x,sr=librosa.load(filename,duration=3,offset=0)
+    x,sr=librosa.load(filename,duration=3,offset=0.5)
 
     # trim silence
-    xt, _ = librosa.effects.trim(x, top_db=50, frame_length=256, hop_length=64)
+    xt, _ = librosa.effects.trim(x, top_db=60, frame_length=1024, hop_length=128)
 
     # convert trimmed audio to melspectrogram
     X = librosa.feature.melspectrogram(y=xt, sr=sr)
