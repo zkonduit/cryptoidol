@@ -95,7 +95,7 @@ def prove_task():
                 }
 
                 res = requests.put(
-                    url=f"{api_key.ARCHON_URL}/artifact/idol-2",
+                    url=f"{api_key.ARCHON_URL}/artifact/idol-3",
                     headers={"X-API-KEY": api_key.API_KEY},
                     files={
                         "data": input_json_buffer
@@ -123,7 +123,7 @@ def prove_task():
                                     "output": f"witness_{latest_uuid}.json",
                                 },
                             },
-                            "working_dir": "idol-2",
+                            "working_dir": "idol-3",
                         },
                         {
                             "ezkl_command": {
@@ -136,7 +136,7 @@ def prove_task():
                                     "check_mode": "UNSAFE",
                                 },
                             },
-                            "working_dir": "idol-2",
+                            "working_dir": "idol-3",
                         },
                     ]
                 )
@@ -252,7 +252,7 @@ if __name__ == '__main__':
             }
 
             res = requests.put(
-                url=f"{api_key.ARCHON_URL}/artifact/idol-2",
+                url=f"{api_key.ARCHON_URL}/artifact/idol-3",
                 headers={"X-API-KEY": api_key.API_KEY},
                 files={
                     "data": input_json_buffer,
@@ -280,7 +280,7 @@ if __name__ == '__main__':
                                 "output": f"witness_{latest_uuid}.json",
                             },
                         },
-                        "working_dir": "idol-2",
+                        "working_dir": "idol-3",
                     },
                     {
                         "ezkl_command": {
@@ -293,7 +293,7 @@ if __name__ == '__main__':
                                 "check_mode": "UNSAFE",
                             },
                         },
-                        "working_dir": "idol-2",
+                        "working_dir": "idol-3",
                     },
                 ]
             )
@@ -333,7 +333,7 @@ if __name__ == '__main__':
                     proof_file_path = data[1]['command']['ezkl_command']['Prove']['proof_path']
 
                     res = requests.get(
-                        url=f"{api_key.ARCHON_URL}/artifact/idol-2/{proof_file_path}",
+                        url=f"{api_key.ARCHON_URL}/artifact/idol-3/{proof_file_path}",
                         headers={ "X-API-KEY": api_key.API_KEY},
                     )
 
