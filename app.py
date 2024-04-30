@@ -10,6 +10,12 @@ from mclbn256 import Fr
 import api_key
 import requests
 import time
+import logging
+import traceback
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 app = Flask(__name__)
@@ -151,8 +157,10 @@ def prove_task():
                     "id": str(data["id"])
                 })
 
-
     except Exception as e:
+        logger.exception("An error occurred during prove task")
+        logger.error(f"Error message: {str(e)}")
+        logger.error(f"Error traceback: {traceback.format_exc()}")
         return repr(e), 500
 
 
