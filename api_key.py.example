@@ -1,3 +1,3 @@
 API_KEY="put a uuid api key here b011e450-a087-455e-9627-f7108340cdf0"
 ARCHON_URL="https://backend.cryptoidol.tech"
-CALLBACK_URL="https://backend.cryptoidol.tech/callback"
+CALLBACK_URL="https://backend.cryptoidol.tech/callback/"

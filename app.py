@@ -57,7 +57,7 @@ def u64_to_fr(array):
     return Fr(reconstructed_bytes)
 
 
-@app.route('/prove', methods=['POST'])
+@app.route('/prove/', methods=["POST"])
 def prove_task():
     try:
         audio_file = request.files['audio'].read()
@@ -156,7 +156,7 @@ def prove_task():
         return repr(e), 500
 
 
-@app.route('/callback', methods=["POST"])
+@app.route('/callback/', methods=["POST"])
 def callback():
     try:
         data = request.data
@@ -193,7 +193,7 @@ def callback():
         return repr(e), 500
 
 
-@app.route('/recipe/<id>')
+@app.route('/recipe/<id>/')
 def recipe(id):
     saved_file = os.path.join("proof_data", str(id) + ".json")
     if not os.path.exists(saved_file):
