@@ -14,7 +14,7 @@ import logging
 import traceback
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -156,6 +156,12 @@ def prove_task():
                     "status": "ok",
                     "id": str(data["id"])
                 })
+
+    except EOFError as e:
+        logger.exception("EOFError occurred during audio file processing")
+        logger.error(f"Error message: {str(e)}")
+        logger.error(f"Error traceback: {traceback.format_exc()}")
+        return "Incomplete file sent, you may want to try resubmitting again.", 500
 
     except Exception as e:
         logger.exception("An error occurred during prove task")
