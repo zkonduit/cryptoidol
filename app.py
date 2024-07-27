@@ -263,7 +263,7 @@ if __name__ == '__main__':
             }
 
             res = requests.put(
-                url=f"{api_key.ARCHON_URL}/artifact/idol-3?deployment=prod-1",
+                url=f"{api_key.ARCHON_URL}/artifact/idol-3?deployment=prod-1"
                 headers={"X-API-KEY": api_key.API_KEY},
                 files={
                     "data": input_json_buffer,
@@ -274,6 +274,7 @@ if __name__ == '__main__':
             data = json.loads(res.content.decode('utf-8'))
             print(data)
             latest_uuid = data["latest_uuid"]
+            print("latest_uuid: ", latest_uuid)
 
             # gen-witness and prove
             res = requests.post(
@@ -286,9 +287,9 @@ if __name__ == '__main__':
                     {
                         "ezkl_command": {
                             "GenWitness": {
-                                "data": f"input_{latest_uuid}.json",
+                                "data":  f"input_{latest_uuid}.json" if latest_uuid is not None else "input.json",
                                 "compiled_circuit": "model.compiled",
-                                "output": f"witness_{latest_uuid}.json",
+                                "output":  f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
                             },
                         },
                         "artifact": "idol-3",
@@ -297,10 +298,10 @@ if __name__ == '__main__':
                     {
                         "ezkl_command": {
                             "Prove": {
-                                "witness": f"witness_{latest_uuid}.json",
+                                "witness":  f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
                                 "compiled_circuit": "model.compiled",
                                 "pk_path": "pk.key",
-                                "proof_path": f"proof_{latest_uuid}.json",
+                                "proof_path": f"proof_{latest_uuid}.json" if latest_uuid is not None else "proof.json",
                                 "proof_type": "Single",
                                 "check_mode": "UNSAFE",
                             },
@@ -366,4 +367,3 @@ if __name__ == '__main__':
 
 
                 query_count += 1
-
