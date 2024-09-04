@@ -109,40 +109,56 @@ def prove_task():
                 latest_uuid = data["latest_uuid"]
 
                 # gen-witness and prove
-                res = requests.post(
-                    url=f"{api_key.ARCHON_URL}/recipe?callback_url={api_key.CALLBACK_URL}",
-                    headers={
-                        "X-API-KEY": api_key.API_KEY,
-                        "Content-Type": "application/json",
-                    },
-                    json=[
-                        {
-                            "ezkl_command": {
-                                "GenWitness": {
-                                    "data": f"input_{latest_uuid}.json",
-                                    "compiled_circuit": "model.compiled",
-                                    "output": f"witness_{latest_uuid}.json",
-                                },
-                            },
-                            "artifact": "idol-3",
-                            "deployment": "prod-1",
+                try:
+                    res = requests.post(
+                        url=f"{api_key.ARCHON_URL}/recipe",
+                        headers={
+                            "X-API-KEY": api_key.API_KEY,
+                            "Content-Type": "application/json",
                         },
-                        {
-                            "ezkl_command": {
-                                "Prove": {
-                                    "witness": f"witness_{latest_uuid}.json",
-                                    "compiled_circuit": "model.compiled",
-                                    "pk_path": "pk.key",
-                                    "proof_path": f"proof_{latest_uuid}.json",
-                                    "proof_type": "Single",
-                                    "check_mode": "UNSAFE",
+                        json=[  # Note: This is now a list, not a dict
+                            {
+                                "ezkl_command": {
+                                    "GenWitness": {
+                                        "data": f"input_{latest_uuid}.json" if latest_uuid is not None else "input.json",
+                                        "compiled_circuit": "model.compiled",
+                                        "output": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
+                                    },
                                 },
+                                "command": f"gen-witness --data /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/input_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --output /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json",
+                                "artifact": "idol-3",
+                                "deployment": "prod-1",
+                                "binary": "ezkl"
                             },
-                            "artifact": "idol-3",
-                            "deployment": "prod-1"
-                        },
-                    ]
-                )
+                            {
+                                "ezkl_command": {
+                                    "Prove": {
+                                        "witness": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
+                                        "compiled_circuit": "model.compiled",
+                                        "pk_path": "pk.key",
+                                        "proof_path": f"proof_{latest_uuid}.json" if latest_uuid is not None else "proof.json",
+                                        "proof_type": "Single",
+                                        "check_mode": "UNSAFE",
+                                    },
+                                },
+                                "command": f"prove --witness /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --pk-path pk.key --proof-path /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/proof_{latest_uuid}.json",
+                                "artifact": "idol-3",
+                                "deployment": "prod-1",
+                                "binary": "ezkl"
+                            },
+                        ]
+                    )
+
+                    if res.status_code >= 400:
+                        print(f"Error: HTTP {res.status_code}")
+                        error_message = res.json().get('message', 'No error message provided')
+                        print(f"Error message: {error_message}")
+                    else:
+                        print("Request successful")
+                        print(res.json())
+
+                except Exception as e:
+                    print(f"Error parsing JSON response: {str(e)}")
 
                 res.raise_for_status()
                 data = json.loads(res.content.decode('utf-8'))
@@ -263,7 +279,7 @@ if __name__ == '__main__':
             }
 
             res = requests.put(
-                url=f"{api_key.ARCHON_URL}/artifact/idol-3?deployment=prod-1"
+                url=f"{api_key.ARCHON_URL}/artifact/idol-3?deployment=prod-1",
                 headers={"X-API-KEY": api_key.API_KEY},
                 files={
                     "data": input_json_buffer,
@@ -277,42 +293,57 @@ if __name__ == '__main__':
             print("latest_uuid: ", latest_uuid)
 
             # gen-witness and prove
-            res = requests.post(
-                url=f"{api_key.ARCHON_URL}/recipe",
-                headers={
-                    "X-API-KEY": api_key.API_KEY,
-                    "Content-Type": "application/json",
-                },
-                json=[
-                    {
-                        "ezkl_command": {
-                            "GenWitness": {
-                                "data":  f"input_{latest_uuid}.json" if latest_uuid is not None else "input.json",
-                                "compiled_circuit": "model.compiled",
-                                "output":  f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
-                            },
-                        },
-                        "artifact": "idol-3",
-                        "deployment": "prod-1"
+            try:
+                res = requests.post(
+                    url=f"{api_key.ARCHON_URL}/recipe",
+                    headers={
+                        "X-API-KEY": api_key.API_KEY,
+                        "Content-Type": "application/json",
                     },
-                    {
-                        "ezkl_command": {
-                            "Prove": {
-                                "witness":  f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
-                                "compiled_circuit": "model.compiled",
-                                "pk_path": "pk.key",
-                                "proof_path": f"proof_{latest_uuid}.json" if latest_uuid is not None else "proof.json",
-                                "proof_type": "Single",
-                                "check_mode": "UNSAFE",
+                    json=[  # Note: This is now a list, not a dict
+                        {
+                            "ezkl_command": {
+                                "GenWitness": {
+                                    "data": f"input_{latest_uuid}.json" if latest_uuid is not None else "input.json",
+                                    "compiled_circuit": "model.compiled",
+                                    "output": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
+                                },
                             },
+                            "command": f"gen-witness --data /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/input_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --output /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json",
+                            "artifact": "idol-3",
+                            "deployment": "prod-1",
+                            "binary": "ezkl"
                         },
-                        "artifact": "idol-3",
-                        "deployment": "prod-1",
-                    },
-                ]
-            )
+                        {
+                            "ezkl_command": {
+                                "Prove": {
+                                    "witness": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
+                                    "compiled_circuit": "model.compiled",
+                                    "pk_path": "pk.key",
+                                    "proof_path": f"proof_{latest_uuid}.json" if latest_uuid is not None else "proof.json",
+                                    "proof_type": "Single",
+                                    "check_mode": "UNSAFE",
+                                },
+                            },
+                            "command": f"prove --witness /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --pk-path pk.key --proof-path /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/proof_{latest_uuid}.json",
+                            "artifact": "idol-3",
+                            "deployment": "prod-1",
+                            "binary": "ezkl"
+                        },
+                    ]
+                )
 
-            res.raise_for_status()
+                if res.status_code >= 400:
+                    print(f"Error: HTTP {res.status_code}")
+                    error_message = res.json().get('message', 'No error message provided')
+                    print(f"Error message: {error_message}")
+                else:
+                    print("Request successful")
+                    print(res.json())
+
+            except Exception as e:
+                print(f"Error parsing JSON response: {str(e)}")
+
             data = json.loads(res.content.decode('utf-8'))
             print("full data: ", data)
             print("id: ", data["id"])
@@ -335,6 +366,7 @@ if __name__ == '__main__':
                 )
                 res.raise_for_status()
                 data = json.loads(res.content.decode('utf-8'))
+                print("witness data: ", data[0])
                 print("prove data: ", data[1])
                 # print(data)
                 print("prove status: ", data[1]['status'])
@@ -344,10 +376,9 @@ if __name__ == '__main__':
                 if status == "Complete":
                     print("COMPLETE")
                     print(data)
-                    proof_file_path = data[1]['command']['ezkl_command']['Prove']['proof_path']
 
                     res = requests.get(
-                        url=f"{api_key.ARCHON_URL}/artifact/idol-3/file/{proof_file_path}?deployment=prod-1",
+                        url=f"{api_key.ARCHON_URL}/artifact/idol-3/file/proof_{latest_uuid}.json?deployment=prod-1",
                         headers={ "X-API-KEY": api_key.API_KEY},
                     )
 
