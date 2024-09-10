@@ -138,7 +138,8 @@ def prove_task():
                                 ],
                                 "artifact": "idol-3",
                                 "deployment": "prod-1",
-                                "binary": "ezkl"
+                                "binary": "ezkl",
+                                "output_path": [f"proof_{latest_uuid}.json"]
                             },
                         ]
                     )
