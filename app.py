@@ -184,22 +184,31 @@ def callback():
         data_output = json.loads(data)
         print(data_output)
 
+        if data_output[1]["status"] == "Errored":
+            with open(os.path.join("proof_data", str(data_output[0]['recipe_id'])) + ".json", "w") as f:
+                to_save = {
+                    "status": "error",
+                    "error": data_output[1]["logs"]
+                }
+                json.dump(to_save, f)
+
         if 'prove' in data_output[1]['command']['command']:
             # Extract the proof_path
             proof_path = next(arg for arg in data_output[1]['command']['command'] if arg.startswith('--proof-path'))
             proof_file = proof_path.split('--proof-path ')[1]
-            print(f"The proof file is: {proof_file}")
+            print(f"proof file in callback: {proof_file}")
 
         else:
             print("No proof file found in the data.")
 
             with open(os.path.join("proof_data", str(data_output[0]['recipe_id'])) + ".json", "w") as f:
                 to_save = {
-                    "status": "No proof file found in the data"
+                    "status": "error",
+                    "error": "No proof file found"
                 }
                 json.dump(to_save, f)
 
-            return jsonify({"status": "error", "message": "Unexpected data structure"}), 400
+            return jsonify({"status": "error", "message": "No proof file found in response"}), 400
 
 
         res = requests.get(
