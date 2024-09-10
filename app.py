@@ -105,43 +105,37 @@ def prove_task():
 
                 res.raise_for_status()
                 data = json.loads(res.content.decode('utf-8'))
-                print(data)
                 latest_uuid = data["latest_uuid"]
+                print("latest_uuid: ", latest_uuid)
 
                 # gen-witness and prove
                 try:
                     res = requests.post(
-                        url=f"{api_key.ARCHON_URL}/recipe",
+                        url=f"{api_key.ARCHON_URL}/recipe?callback_url={api_key.CALLBACK_URL}",
                         headers={
                             "X-API-KEY": api_key.API_KEY,
                             "Content-Type": "application/json",
                         },
                         json=[  # Note: This is now a list, not a dict
                             {
-                                "ezkl_command": {
-                                    "GenWitness": {
-                                        "data": f"input_{latest_uuid}.json" if latest_uuid is not None else "input.json",
-                                        "compiled_circuit": "model.compiled",
-                                        "output": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
-                                    },
-                                },
-                                "command": f"gen-witness --data /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/input_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --output /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json",
+                                "command": [
+                                    "gen-witness",
+                                    f"--data input_{latest_uuid}.json",
+                                    f"--compiled-circuit model.compiled",
+                                    f"--output witness_{latest_uuid}.json"
+                                ],
                                 "artifact": "idol-3",
                                 "deployment": "prod-1",
                                 "binary": "ezkl"
                             },
                             {
-                                "ezkl_command": {
-                                    "Prove": {
-                                        "witness": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
-                                        "compiled_circuit": "model.compiled",
-                                        "pk_path": "pk.key",
-                                        "proof_path": f"proof_{latest_uuid}.json" if latest_uuid is not None else "proof.json",
-                                        "proof_type": "Single",
-                                        "check_mode": "UNSAFE",
-                                    },
-                                },
-                                "command": f"prove --witness /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --pk-path pk.key --proof-path /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/proof_{latest_uuid}.json",
+                                "command": [
+                                    "prove",
+                                    f"--witness witness_{latest_uuid}.json",
+                                    f"--compiled-circuit model.compiled" ,
+                                    "--pk-path pk.key",
+                                    f"--proof-path proof_{latest_uuid}.json",
+                                ],
                                 "artifact": "idol-3",
                                 "deployment": "prod-1",
                                 "binary": "ezkl"
@@ -190,23 +184,44 @@ def callback():
         data_output = json.loads(data)
         print(data_output)
 
-        if isinstance(data_output, list) and len(data_output) > 1:
-            data_1_output = json.loads(data_output[1]['output'])
-            to_save = {
-                "status": "success",
-                "score_hex": data_1_output["pretty_public_inputs"]["outputs"][0][0],
-                "score": data_1_output["pretty_public_inputs"]["rescaled_outputs"][0][0],
-                "proof": data_1_output["hex_proof"]
-            }
+        if 'prove' in data_output[1]['command']['command']:
+            # Extract the proof_path
+            proof_path = next(arg for arg in data_output[1]['command']['command'] if arg.startswith('--proof-path'))
+            proof_file = proof_path.split('--proof-path ')[1]
+            print(f"The proof file is: {proof_file}")
+
+        else:
+            print("No proof file found in the data.")
+
             with open(os.path.join("proof_data", str(data_output[0]['recipe_id'])) + ".json", "w") as f:
+                to_save = {
+                    "status": "No proof file found in the data"
+                }
                 json.dump(to_save, f)
 
-            return jsonify({
-                "status": "ok"
-            })
-        else:
-            # Handle unexpected data structure
             return jsonify({"status": "error", "message": "Unexpected data structure"}), 400
+
+
+        res = requests.get(
+            url=f"{api_key.ARCHON_URL}/artifact/idol-3/file/{proof_file}?deployment=prod-1",
+            headers={ "X-API-KEY": api_key.API_KEY},
+        )
+
+        proof_data = res.json()
+
+        to_save = {
+            "status": "success",
+            "score_hex": proof_data["pretty_public_inputs"]["outputs"][0][0],
+            "score": proof_data["pretty_public_inputs"]["rescaled_outputs"][0][0],
+            "proof": proof_data["hex_proof"]
+        }
+
+        with open(os.path.join("proof_data", str(data_output[0]['recipe_id'])) + ".json", "w") as f:
+            json.dump(to_save, f)
+
+        return jsonify({
+            "status": "ok"
+        })
 
     except Exception as e:
         with open(os.path.join("proof_data", str(data_output[0]['recipe_id'])) + ".json", "w") as f:
@@ -302,30 +317,24 @@ if __name__ == '__main__':
                     },
                     json=[  # Note: This is now a list, not a dict
                         {
-                            "ezkl_command": {
-                                "GenWitness": {
-                                    "data": f"input_{latest_uuid}.json" if latest_uuid is not None else "input.json",
-                                    "compiled_circuit": "model.compiled",
-                                    "output": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
-                                },
-                            },
-                            "command": f"gen-witness --data /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/input_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --output /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json",
+                            "command": [
+                                "gen-witness",
+                                f"--data input_{latest_uuid}.json",
+                                f"--compiled-circuit model.compiled",
+                                f"--output witness_{latest_uuid}.json"
+                            ],
                             "artifact": "idol-3",
                             "deployment": "prod-1",
                             "binary": "ezkl"
                         },
                         {
-                            "ezkl_command": {
-                                "Prove": {
-                                    "witness": f"witness_{latest_uuid}.json" if latest_uuid is not None else "witness.json",
-                                    "compiled_circuit": "model.compiled",
-                                    "pk_path": "pk.key",
-                                    "proof_path": f"proof_{latest_uuid}.json" if latest_uuid is not None else "proof.json",
-                                    "proof_type": "Single",
-                                    "check_mode": "UNSAFE",
-                                },
-                            },
-                            "command": f"prove --witness /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/witness_{latest_uuid}.json --compiled-circuit /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/model.compiled --pk-path pk.key --proof-path /data/44f0d1ea-9dc9-4e94-9e6e-39e58fb5de51/idol-3/prod-1/proof_{latest_uuid}.json",
+                            "command": [
+                                "prove",
+                                f"--witness witness_{latest_uuid}.json",
+                                f"--compiled-circuit model.compiled",
+                                "--pk-path pk.key",
+                                f"--proof-path proof_{latest_uuid}.json"
+                            ],
                             "artifact": "idol-3",
                             "deployment": "prod-1",
                             "binary": "ezkl"
