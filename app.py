@@ -341,27 +341,28 @@ if __name__ == '__main__':
                             "command": [
                                 "prove",
                                 f"--witness witness_{latest_uuid}.json",
-                                f"--compiled-circuit model.compiled",
+                                f"--compiled-circuit model.compiled" ,
                                 "--pk-path pk.key",
-                                f"--proof-path proof_{latest_uuid}.json"
+                                f"--proof-path proof_{latest_uuid}.json",
                             ],
                             "artifact": "idol-3",
                             "deployment": "prod-1",
-                            "binary": "ezkl"
+                            "binary": "ezkl",
+                            "output_path": [f"proof_{latest_uuid}.json"]
                         },
                     ]
                 )
 
                 if res.status_code >= 400:
                     print(f"Error: HTTP {res.status_code}")
-                    error_message = res.json().get('message', 'No error message provided')
-                    print(f"Error message: {error_message}")
+                    # error_message = res.json().get('message', 'No error message provided')
+                    print(f"Error message: {res.content}")
                 else:
                     print("Request successful")
                     print(res.json())
 
             except Exception as e:
-                print(f"Error parsing JSON response: {str(e)}")
+                print(f"Error parsing response: {str(e)}")
 
             data = json.loads(res.content.decode('utf-8'))
             print("full data: ", data)
@@ -387,26 +388,20 @@ if __name__ == '__main__':
                 data = json.loads(res.content.decode('utf-8'))
                 print("witness data: ", data[0])
                 print("prove data: ", data[1])
-                # print(data)
                 print("prove status: ", data[1]['status'])
 
                 status = data[1]['status']
 
                 if status == "Complete":
-                    print("COMPLETE")
                     print(data)
-
-                    res = requests.get(
-                        url=f"{api_key.ARCHON_URL}/artifact/idol-3/file/proof_{latest_uuid}.json?deployment=prod-1",
-                        headers={ "X-API-KEY": api_key.API_KEY},
-                    )
+                    json_data = json.loads(data[1]['output'][0]['utf8_string'])
 
                     res.raise_for_status()
 
                     proof_data = res.json()
 
-                    print("hex_proof: ", proof_data["hex_proof"])
-                    print("instances: ", proof_data["pretty_public_inputs"]["outputs"])
+                    print("hex_proof: ", json_data["hex_proof"])
+                    print("instances: ", json_data["pretty_public_inputs"]["outputs"])
 
                     break
 
