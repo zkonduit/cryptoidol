@@ -111,37 +111,45 @@ def prove_task():
                 # gen-witness and prove
                 try:
                     res = requests.post(
-                        url=f"{api_key.ARCHON_URL}/recipe?callback_url={api_key.CALLBACK_URL}",
+                        url=f"{api_key.ARCHON_URL}/recipe",
                         headers={
                             "X-API-KEY": api_key.API_KEY,
                             "Content-Type": "application/json",
                         },
-                        json=[  # Note: This is now a list, not a dict
-                            {
-                                "command": [
-                                    "gen-witness",
-                                    f"--data input_{latest_uuid}.json",
-                                    f"--compiled-circuit model.compiled",
-                                    f"--output witness_{latest_uuid}.json"
-                                ],
-                                "artifact": "idol-3",
-                                "deployment": "prod-1",
-                                "binary": "ezkl"
+                        json={
+                            "commands": [
+                                {
+                                    "artifact": "idol-3",
+                                    "binary": "ezkl",
+                                    "deployment": "prod-1",
+                                    "command": [
+                                        "gen-witness",
+                                        f"--data input_{latest_uuid}.json",
+                                        f"--compiled-circuit model.compiled",
+                                        f"--output witness_{latest_uuid}.json"
+                                    ],
+                                },
+                                {
+                                    "artifact": "idol-3",
+                                    "deployment": "prod-1",
+                                    "binary": "ezkl",
+                                    "command": [
+                                        "prove",
+                                        f"--witness witness_{latest_uuid}.json",
+                                        f"--compiled-circuit model.compiled" ,
+                                        "--pk-path pk.key",
+                                        f"--proof-path proof_{latest_uuid}.json",
+                                    ],
+                                    "output_path": [f"proof_{latest_uuid}.json"]
+                                },
+                            ],
+                            "data": [],
+                            "response_settings": {
+                                "callback": {
+                                    "url": api_key.CALLBACK_URL,
+                                },
                             },
-                            {
-                                "command": [
-                                    "prove",
-                                    f"--witness witness_{latest_uuid}.json",
-                                    f"--compiled-circuit model.compiled" ,
-                                    "--pk-path pk.key",
-                                    f"--proof-path proof_{latest_uuid}.json",
-                                ],
-                                "artifact": "idol-3",
-                                "deployment": "prod-1",
-                                "binary": "ezkl",
-                                "output_path": [f"proof_{latest_uuid}.json"]
-                            },
-                        ]
+                        }
                     )
 
                     if res.status_code >= 400:
@@ -325,37 +333,39 @@ if __name__ == '__main__':
                         "X-API-KEY": api_key.API_KEY,
                         "Content-Type": "application/json",
                     },
-                    json=[  # Note: This is now a list, not a dict
-                        {
-                            "command": [
-                                "gen-witness",
-                                f"--data input_{latest_uuid}.json",
-                                f"--compiled-circuit model.compiled",
-                                f"--output witness_{latest_uuid}.json"
-                            ],
-                            "artifact": "idol-3",
-                            "deployment": "prod-1",
-                            "binary": "ezkl"
-                        },
-                        {
-                            "command": [
-                                "prove",
-                                f"--witness witness_{latest_uuid}.json",
-                                f"--compiled-circuit model.compiled" ,
-                                "--pk-path pk.key",
-                                f"--proof-path proof_{latest_uuid}.json",
-                            ],
-                            "artifact": "idol-3",
-                            "deployment": "prod-1",
-                            "binary": "ezkl",
-                            "output_path": [f"proof_{latest_uuid}.json"]
-                        },
-                    ]
+                    json={
+                        "commands": [
+                            {
+                                "artifact": "idol-3",
+                                "binary": "ezkl",
+                                "deployment": "prod-1",
+                                "command": [
+                                    "gen-witness",
+                                    f"--data input_{latest_uuid}.json",
+                                    f"--compiled-circuit model.compiled",
+                                    f"--output witness_{latest_uuid}.json"
+                                ],
+                            },
+                            {
+                                "artifact": "idol-3",
+                                "deployment": "prod-1",
+                                "binary": "ezkl",
+                                "command": [
+                                    "prove",
+                                    f"--witness witness_{latest_uuid}.json",
+                                    f"--compiled-circuit model.compiled" ,
+                                    "--pk-path pk.key",
+                                    f"--proof-path proof_{latest_uuid}.json",
+                                ],
+                                "output_path": [f"proof_{latest_uuid}.json"]
+                            },
+                        ],
+                        "data": []
+                    }
                 )
 
                 if res.status_code >= 400:
                     print(f"Error: HTTP {res.status_code}")
-                    # error_message = res.json().get('message', 'No error message provided')
                     print(f"Error message: {res.content}")
                 else:
                     print("Request successful")
