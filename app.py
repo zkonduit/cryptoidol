@@ -143,18 +143,18 @@ def prove_task():
                     print("Request successful")
                     print(res.json())
 
+                    res.raise_for_status()
+                    data = json.loads(res.content.decode('utf-8'))
+                    print("full data: ", data)
+                    print("id: ", str(data["id"]))
+
+                    return jsonify({
+                        "status": "ok",
+                        "id": str(data["id"])
+                    })
+
             except Exception as e:
                 print(f"Error parsing JSON response: {str(e)}")
-
-            res.raise_for_status()
-            data = json.loads(res.content.decode('utf-8'))
-            print("full data: ", data)
-            print("id: ", str(data["id"]))
-
-            return jsonify({
-                "status": "ok",
-                "id": str(data["id"])
-            })
 
     except EOFError as e:
         logger.exception("EOFError occurred during audio file processing")
