@@ -90,6 +90,7 @@ def prove_task():
 
             # gen-witness and prove
             try:
+                latest_uuid = str(uuid.uuid4())
                 res = requests.post(
                     url=f"{api_key.ARCHON_URL}/recipe",
                     headers={
@@ -139,6 +140,8 @@ def prove_task():
                     print(f"Error: HTTP {res.status_code}")
                     error_message = res.json().get('message', 'No error message provided')
                     print(f"Error message: {error_message}")
+
+                    return error_message, 500
                 else:
                     print("Request successful")
                     print(res.json())
@@ -155,6 +158,8 @@ def prove_task():
 
             except Exception as e:
                 print(f"Error parsing JSON response: {str(e)}")
+
+                return "Error parsing JSON response", 500
 
     except EOFError as e:
         logger.exception("EOFError occurred during audio file processing")
